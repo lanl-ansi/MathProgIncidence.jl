@@ -28,17 +28,32 @@ Graphs.jl graph
 """
 function _tuple_to_graphs_jl(bip_graph)
     A, B, E = bip_graph
+    # Assumption here is that A and B are disjoint. And also form
+    # a partition of 1:nv.
+    nv = length(A) + length(B)
+    graph = gjl.Graph(gjl.Edge.(E))
+    # If E does not cover all vertices, some vertices may not appear in the
+    # graph. Add these missing vertices.
+    n_missing = nv - gjl.nv(graph)
+    gjl.add_vertices!(graph, n_missing)
+    # Note that by constructing this graph, we have lost our particular
+    # bipartition.
+    return graph
 end
 
 struct IncidenceGraphInterface
     _graph
     _con_node_map
     _var_node_map
+    # TODO: Should this interface store an array of VariableRef
+    # and ConstraintRef? Yes.
 end
 
 IncidenceGraphInterface(
     args::Tuple{Tuple, Dict, Dict}
-) = IncidenceGraphInterface(args[1], args[2], args[3])
+) = IncidenceGraphInterface(
+    _tuple_to_graphs_jl(args[1]), args[2], args[3]
+)
 # Actually want the _graph field to be a Graphs.jl object
 # Need to make sure:
 # - I have a bipartite matching algorithm available
@@ -63,6 +78,8 @@ function get_adjacent(
     igraph::IncidenceGraphInterface,
     constraint::jmp.ConstraintRef,
 )
+    con_node = igraph._con_node_map[constraint]
+    var_nodes = get_adjacent(igraph, node)
 end
 
 """
@@ -71,6 +88,15 @@ function get_adjacent(
     igraph::IncidenceGraphInterface,
     variable::jmp.VariableRef,
 )
+end
+
+"""
+"""
+function get_adjacent(
+    igraph::IncidenceGraphInterface,
+    node::Int64,
+)
+    return gjl.neighbors(igraph._graph, node)
 end
 
 """
