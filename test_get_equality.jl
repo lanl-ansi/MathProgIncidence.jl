@@ -37,8 +37,8 @@ function main()
     test_with_vector_constraint()
 end
 
-end # module test_get_equality
+end # module TestGetEquality
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    test_get_equality.main()
+    TestGetEquality.main()
 end
