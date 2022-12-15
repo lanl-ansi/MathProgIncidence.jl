@@ -92,5 +92,5 @@ end
 end # module TestIncidenceGraph
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    TestInterface.main()
+    TestIncidenceGraph.main()
 end
