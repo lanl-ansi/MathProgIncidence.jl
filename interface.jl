@@ -41,18 +41,35 @@ function _tuple_to_graphs_jl(bip_graph)
     return graph
 end
 
+function _maps_to_nodes(con_map, var_map)
+    n_nodes = length(con_map) + length(var_map)
+    nodes = Vector{Any}(nothing for _ in 1:n_nodes)
+    for (con, idx) in con_map
+        nodes[idx] = con
+    end
+    for var, idx in var_map
+        nodes[idx] = var
+    end
+    if any(node === nothing for node in nodes)
+        throw(Exception)
+    end
+    return nodes
+end
+
 struct IncidenceGraphInterface
     _graph
     _con_node_map
     _var_node_map
-    # TODO: Should this interface store an array of VariableRef
-    # and ConstraintRef? Yes.
+    _nodes
 end
 
 IncidenceGraphInterface(
     args::Tuple{Tuple, Dict, Dict}
 ) = IncidenceGraphInterface(
-    _tuple_to_graphs_jl(args[1]), args[2], args[3]
+    _tuple_to_graphs_jl(args[1]),
+    args[2],
+    args[3],
+    _maps_to_nodes(args[2], args[3]),
 )
 # Actually want the _graph field to be a Graphs.jl object
 # Need to make sure:
@@ -79,7 +96,9 @@ function get_adjacent(
     constraint::jmp.ConstraintRef,
 )
     con_node = igraph._con_node_map[constraint]
-    var_nodes = get_adjacent(igraph, node)
+    var_nodes = get_adjacent(igraph, con_node)
+    variables = [igraph._nodes[n] for n in var_nodes]
+    return variables
 end
 
 """
@@ -88,6 +107,10 @@ function get_adjacent(
     igraph::IncidenceGraphInterface,
     variable::jmp.VariableRef,
 )
+    var_node = igraph._var_node_map[variable]
+    con_nodes = get_adjacent(igraph, var_node)
+    constraints = [igraph._nodes[n] for n in var_nodes]
+    return constraints
 end
 
 """
