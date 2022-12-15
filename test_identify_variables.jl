@@ -148,19 +148,15 @@ function test_model_bad_constr_no_ineq()
     # Note that we don't throw an error because we don't attempt to
     # identify variables in "vectorcon" as we don't recognize it as an
     # equality constraint.
-    variables = identify_unique_variables(m, include_inequality=false)
-    pred_var_set = Set([
-        m[:flow],
-        m[:flow_comp][1],
-        m[:flow_comp][2],
-        m[:flow_comp][3],
-        m[:x][1],
-        m[:x][2],
-        m[:x][3],
-        m[:rho],
-    ])
-    @test(length(variables) == length(pred_var_set))
-    @test(pred_var_set == Set(variables))
+    #
+    # NOTE: We now do throw an error. I have added a method of
+    # set_implies_equality that throws an error if it is provided with a
+    # subtype of moi.VectorSet. This is not ~strictly~ correct. However,
+    # I have punted for now.
+    @test_throws(
+        TypeError,
+        identify_unique_variables(m, include_inequality=false),
+    )
 end
 
 function main()
@@ -181,5 +177,6 @@ end
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    TestIdentifyVariables.main()
+    println(test_model_bad_constr_no_ineq())
+    #TestIdentifyVariables.main()
 end
