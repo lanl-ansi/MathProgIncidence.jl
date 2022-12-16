@@ -1,6 +1,11 @@
-include("interface.jl")
-using .Interface: IncidenceGraphInterface
+include("interface.jl") # module Interface
 import .Interface as interface
+
+# Note: Do not import from IncidenceGraphInterface here; this will
+# lead to the module being defined multiple times, and causes problems
+# in the REPL.
+#using .Interface: IncidenceGraphInterface
+
 include("models.jl")
 using .models: make_degenerate_flow_model
 using Test: @test, @test_throws
@@ -26,7 +31,7 @@ end
 
 function test_construct_interface()
     m = make_degenerate_flow_model()
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
 
     variables = [
         m[:x][1],
@@ -60,7 +65,7 @@ function test_construct_interface_rectangular()
         sum_flow_eqn,
         m[:flow] == sum(m[:flow_comp][:]),
     )
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
 
     variables = [
         m[:x][1],
@@ -90,7 +95,7 @@ end
 
 function test_get_adjacent_to_linear_constraint()
     m = make_degenerate_flow_model()
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
     con = m[:sum_comp_eqn]
     adjacent = interface.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:x][2], m[:x][3]])
@@ -100,7 +105,7 @@ end
 
 function test_get_adjacent_to_quadratic_constraint()
     m = make_degenerate_flow_model()
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
     con = m[:comp_dens_eqn][1]
     adjacent = interface.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:rho]])
@@ -110,7 +115,7 @@ end
 
 function test_get_adjacent_to_nonlinear_constraint()
     m = make_degenerate_flow_model()
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
     con = m[:bulk_dens_eqn]
     adjacent = interface.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:x][2], m[:x][3], m[:rho]])
@@ -120,7 +125,7 @@ end
 
 function test_get_adjacent_to_variable()
     m = make_degenerate_flow_model()
-    igraph = IncidenceGraphInterface(m)
+    igraph = interface.IncidenceGraphInterface(m)
     var = m[:x][2]
     adjacent = interface.get_adjacent(igraph, var)
     incident_cons = [
@@ -134,6 +139,45 @@ function test_get_adjacent_to_variable()
 end
 
 
+function test_maximum_matching()
+    m = make_degenerate_flow_model()
+    igraph = interface.IncidenceGraphInterface(m)
+    matching = interface.maximum_matching(igraph)
+    @test length(matching) == 7
+    for (con, var) in matching
+        @test typeof(con) <: jmp.ConstraintRef
+        @test typeof(var) <: jmp.VariableRef
+        @test var in Set(interface.get_adjacent(igraph, con))
+        @test con in Set(interface.get_adjacent(igraph, var))
+    end
+    possibly_unmatched_vars = Set([
+        m[:flow_comp][1],
+        m[:flow_comp][2],
+        m[:flow_comp][3],
+        m[:flow],
+    ])
+    possibly_unmatched_cons = Set([
+        m[:comp_dens_eqn][1],
+        m[:comp_dens_eqn][2],
+        m[:comp_dens_eqn][3],
+        m[:bulk_dens_eqn],
+        m[:sum_comp_eqn],
+    ])
+    for con in keys(igraph._con_node_map)
+        if !(con in keys(matching))
+            @test con in possibly_unmatched_cons
+        end
+    end
+    matched_var_set = Set(values(matching))
+    for var in keys(igraph._var_node_map)
+        if !(var in matched_var_set)
+            @test var in possibly_unmatched_vars
+        end
+    end
+    return nothing
+end
+
+
 function main()
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -141,6 +185,7 @@ function main()
     test_get_adjacent_to_quadratic_constraint()
     test_get_adjacent_to_nonlinear_constraint()
     test_get_adjacent_to_variable()
+    test_maximum_matching()
 end
 
 
