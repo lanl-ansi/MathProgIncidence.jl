@@ -43,11 +43,11 @@ end
 
 function _maps_to_nodes(con_map, var_map)
     n_nodes = length(con_map) + length(var_map)
-    nodes = Vector{Any}(nothing for _ in 1:n_nodes)
+    nodes = Vector{Any}([nothing for _ in 1:n_nodes])
     for (con, idx) in con_map
         nodes[idx] = con
     end
-    for var, idx in var_map
+    for (var, idx) in var_map
         nodes[idx] = var
     end
     if any(node === nothing for node in nodes)
@@ -109,7 +109,7 @@ function get_adjacent(
 )
     var_node = igraph._var_node_map[variable]
     con_nodes = get_adjacent(igraph, var_node)
-    constraints = [igraph._nodes[n] for n in var_nodes]
+    constraints = [igraph._nodes[n] for n in con_nodes]
     return constraints
 end
 
