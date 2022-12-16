@@ -1,4 +1,5 @@
 module IncidenceGraph
+
 import JuMP as jmp
 import MathOptInterface as moi
 
