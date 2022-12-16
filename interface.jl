@@ -6,6 +6,7 @@ include("incidence_graph.jl")
 using .IncidenceGraph: get_bipartite_incidence_graph
 
 import Graphs as gjl
+import BipartiteMatching as bpm
 
 # TODO: Declare type: IncidenceGraph, or something
 # Would like to construct e.g. IncidenceGraph(model)
@@ -96,7 +97,7 @@ function get_adjacent(
     constraint::jmp.ConstraintRef,
 )
     con_node = igraph._con_node_map[constraint]
-    var_nodes = get_adjacent(igraph, con_node)
+    var_nodes = gjl.neighbors(igraph._graph, con_node)
     variables = [igraph._nodes[n] for n in var_nodes]
     return variables
 end
@@ -108,24 +109,32 @@ function get_adjacent(
     variable::jmp.VariableRef,
 )
     var_node = igraph._var_node_map[variable]
-    con_nodes = get_adjacent(igraph, var_node)
+    con_nodes = gjl.neighbors(igraph._graph, var_node)
     constraints = [igraph._nodes[n] for n in con_nodes]
     return constraints
-end
-
-"""
-"""
-function get_adjacent(
-    igraph::IncidenceGraphInterface,
-    node::Int64,
-)
-    return gjl.neighbors(igraph._graph, node)
 end
 
 """
 Compute a maximum matching of the incidence graph
 """
 function maximum_matching(igraph::IncidenceGraphInterface)
+    ncon = length(igraph._con_node_map)
+    nvar = length(igraph._var_node_map)
+    nodes = igraph._nodes
+
+    edge_set = Set(
+        (c, v) for c in 1:ncon for v in gjl.neighbors(igraph._graph, c)
+    )
+    amat = BitArray{2}(
+        (c, v) in edge_set for c in 1:ncon, v in ncon+1:nvar+ncon
+    )
+    # Need to set up amat s.t. rows are constraint coordinates and columns
+    # are variable coordinates.
+    matching, _ = bpm.findmaxcardinalitybipartitematching(amat)
+    # matching maps row indices to column indices
+    # I want a matching that maps constraints to variables
+    jump_matching = Dict(nodes[r] => nodes[c+ncon] for (r, c) in matching)
+    return jump_matching
 end
 
 """
