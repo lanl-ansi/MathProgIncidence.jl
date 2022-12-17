@@ -178,6 +178,34 @@ function test_maximum_matching()
 end
 
 
+function test_dulmage_mendelsohn()
+    m = make_degenerate_flow_model()
+    igraph = interface.IncidenceGraphInterface(m)
+    con_dmp, var_dmp = interface.dulmage_mendelsohn(igraph)
+    con_undercon = con_dmp.underconstrained
+    con_overcon = cat(con_dmp.overconstrained, con_dmp.unmatched, dims=1)
+    @test Set(con_undercon) == Set([
+        m[:comp_flow_eqn][1], m[:comp_flow_eqn][2], m[:comp_flow_eqn][3]
+    ])
+    @test Set(con_overcon) == Set([
+        m[:comp_dens_eqn][1],
+        m[:comp_dens_eqn][2],
+        m[:comp_dens_eqn][3],
+        m[:bulk_dens_eqn],
+        m[:sum_comp_eqn],
+    ])
+    @test con_dmp.square == []
+    var_undercon = cat(var_dmp.underconstrained, var_dmp.unmatched, dims=1)
+    var_overcon = var_dmp.overconstrained
+    @test Set(var_undercon) == Set([
+        m[:flow_comp][1], m[:flow_comp][2], m[:flow_comp][3], m[:flow]
+    ])
+    @test Set(var_overcon) == Set([m[:x][1], m[:x][2], m[:x][3], m[:rho]])
+    @test var_dmp.square == []
+    return nothing
+end
+
+
 function main()
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -186,6 +214,7 @@ function main()
     test_get_adjacent_to_nonlinear_constraint()
     test_get_adjacent_to_variable()
     test_maximum_matching()
+    test_dulmage_mendelsohn()
 end
 
 
