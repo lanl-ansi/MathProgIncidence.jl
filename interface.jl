@@ -6,6 +6,7 @@ include("incidence_graph.jl")
 using .IncidenceGraph: get_bipartite_incidence_graph
 
 include("maximum_matching.jl") # maximum_matching
+include("dulmage_mendelsohn.jl") # dulmage_mendelsohn
 
 import Graphs as gjl
 import BipartiteMatching as bpm
@@ -167,6 +168,25 @@ function block_triangularize(
 end
 
 function dulmage_mendelsohn(igraph::IncidenceGraphInterface)
+    ncon = length(igraph._con_node_map)
+    con_node_set = Set(1:ncon)
+    con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
+    # Convert tuples into namedtuples with interpretable names, organized in the
+    # order: (underconstrained system, square system, overconstrained system)
+    nodes = igraph._nodes
+    con_dmp = (
+        underconstrained = [nodes[n] for n in con_dmp[3]],
+        square = [nodes[n] for n in con_dmp[4]],
+        overconstrained = [nodes[n] for n in con_dmp[2]],
+        unmatched = [nodes[n] for n in con_dmp[1]],
+    )
+    var_dmp = (
+        unmatched = [nodes[n] for n in var_dmp[1]],
+        underconstrained = [nodes[n] for n in var_dmp[2]],
+        square = [nodes[n] for n in var_dmp[4]],
+        overconstrained = [nodes[n] for n in var_dmp[3]],
+    )
+    return con_dmp, var_dmp
 end
 
 function dulmage_mendelsohn(
