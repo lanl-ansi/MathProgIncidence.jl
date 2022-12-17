@@ -16,7 +16,7 @@ function _get_projected_digraph(
     n_nodes_proj = length(nodes)
     matched_nodes = keys(matching)
     node_set = Set(nodes) # Set of nodes in the original space
-    edge_set = Set{Tuple{Int64}}()
+    edge_set = Set{Tuple{Int64, Int64}}()
     for proj_node in 1:n_nodes_proj
         orig_node = nodes[proj_node]
         if orig_node in matched_nodes
@@ -30,24 +30,35 @@ function _get_projected_digraph(
         end
         # TODO: Out edges?
     end
-    digraph = gjl.DiGraph(n_proj_nodes)
+    digraph = gjl.DiGraph(n_nodes_proj)
     for (n1, n2) in edge_set
         gjl.add_edge!(digraph, n1, n2)
     end
-    return digraph
+    return digraph, orig_proj_map
 end
 
 
 function _get_reachable_from(digraph::gjl.DiGraph, nodes::Vector)
     n_nodes = gjl.nv(digraph)
+    source_set = Set(nodes)
     gjl.add_vertex!(digraph)
+    # Note that root needs to be in this scope so it can be accessed in
+    # finally block
     root = n_nodes + 1
-    for node in nodes
-        gjl.add_edge!(digraph, root, node)
+    bfs_parents = Vector{Int64}()
+    try
+        for node in nodes
+            gjl.add_edge!(digraph, root, node)
+        end
+        bfs_parents = gjl.bfs_parents(digraph, root)
+    finally
+        gjl.rem_vertex!(digraph, root)
     end
-    # TODO: get nodes reachable by BFS from root.
-
-    gjl.rem_vertex!(digraph, root)
+    reachable = [
+        node for (node, par) in enumerate(bfs_parents)
+        if par != 0 && node != root && !(node in source_set)
+    ]
+    return reachable
 end
 
 
@@ -79,9 +90,46 @@ function dulmage_mendelsohn(graph::gjl.Graph, set1::Set)
     nodes1 = sort([n for n in set1])
     nodes2 = sort([n for n in set2])
 
-    proj_digraph1 = _get_projected_digraph(graph, nodes1, matching)
-    proj_digraph2 = _get_projected_digraph(graph, nodes2, matching)
+    proj_digraph1, proj_map1 = _get_projected_digraph(graph, nodes1, matching)
+    proj_digraph2, proj_map2 = _get_projected_digraph(graph, nodes2, matching)
 
     unmatched1 = [n for n in nodes1 if !(n in matched_set)]
     unmatched2 = [n for n in nodes2 if !(n in matched_set)]
+
+    # We need the unmatched nodes in the coordinates of the projected graph
+    proj_unmatched1 = [proj_map1[n] for n in unmatched1]
+    proj_unmatched2 = [proj_map2[n] for n in unmatched2]
+
+    proj_reachable1 = _get_reachable_from(proj_digraph1, proj_unmatched1)
+    proj_reachable2 = _get_reachable_from(proj_digraph2, proj_unmatched2)
+    reachable1 = [nodes1[n] for n in proj_reachable1]
+    reachable2 = [nodes2[n] for n in proj_reachable2]
+
+    # Note that matched_with_reachable1 contains nodes in set 2
+    matched_with_reachable1 = [matching[n] for n in reachable1]
+    matched_with_reachable2 = [matching[n] for n in reachable2]
+
+    filter = cat(
+        unmatched1,
+        unmatched2,
+        reachable1,
+        reachable2,
+        matched_with_reachable1,
+        matched_with_reachable2;
+        dims=1,
+    )
+    other1 = [n for n in nodes1 if !(n in filter)]
+    other2 = [n for n in nodes2 if !(n in filter)]
+
+    return ((
+        unmatched1,
+        reachable1,
+        matched_with_reachable2,
+        other1,
+    ), (
+        unmatched2,
+        reachable2,
+        matched_with_reachable1,
+        other2,
+    ))
 end
