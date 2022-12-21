@@ -3,6 +3,11 @@ uuid = "892fab00-3092-4bd0-9c46-66676a93f84e"
 authors = ["Robert Parker <robbybparker@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+BipartiteMatching = "79040ab4-24c8-4c92-950c-d48b5991a0f6"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+
 [compat]
 julia = "1"
 

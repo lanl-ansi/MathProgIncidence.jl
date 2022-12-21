@@ -17,7 +17,8 @@ TODO. Eventually, I would like the following command to work:
 This package depends on
 [JuMP](https://github.com/jump-dev/jump.jl),
 [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl),
-and [BipartiteMatching.jl](https://github.com/IsaacRudich/BipartiteMatching.jl).
+[BipartiteMatching.jl](https://github.com/IsaacRudich/BipartiteMatching.jl),
+and the dependencies thereof.
 
 ## Example
 TODO. Create some model with a bug in it, use Dulmage-Mendelsohn to debug.
