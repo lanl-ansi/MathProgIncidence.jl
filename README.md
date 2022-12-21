@@ -9,11 +9,11 @@ which commonly happens as the result of a modeling error.
 ## Installation
 TODO. Eventually, I would like the following command to work:
 ```julia
-]add JuMPInG
+]add JuMPIn
 ```
 
 ## Dependencies
-This package depends on the following:
+This package depends on
 [JuMP](https://github.com/jump-dev/jump.jl),
 [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl),
 and [BipartiteMatching.jl](https://github.com/IsaacRudich/BipartiteMatching.jl).
