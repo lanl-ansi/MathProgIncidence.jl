@@ -2,5 +2,10 @@ using JuMPIn
 using Test
 
 @testset "JuMPIn.jl" begin
-    # Write your tests here.
+
+    @testset "IdentifyVariables" begin
+        include("identify_variables.jl")
+        TestIdentifyVariables.runtests()
+    end
+
 end

@@ -2,10 +2,11 @@ module TestIdentifyVariables
 import JuMP as jmp
 import MathOptInterface as moi
 using Test: @testset, @test, @test_throws
+using JuMPIn: identify_unique_variables
+
+# Local import of JuMP models for testing
 include("models.jl")
-using .models: make_degenerate_flow_model
-include("identify_variables.jl")
-using .IdentifyVariables: identify_unique_variables
+using .Models: make_degenerate_flow_model
 
 
 function test_linear()
@@ -159,24 +160,23 @@ function test_model_bad_constr_no_ineq()
     )
 end
 
-function main()
-    println(test_linear())
-    println(test_quadratic())
-    println(test_nonlinear())
-    println(test_nonlinear_with_potential_duplicates())
-    println(test_several_equalities())
-    println(test_several_constraints_with_ineq())
-    println(test_model())
-    println(test_model_with_ineq())
-    println(test_model_bad_constr())
-    println(test_model_bad_constr_no_ineq())
-    println(test_function_with_variable_squared())
+function runtests()
+    test_linear()
+    test_quadratic()
+    test_nonlinear()
+    test_nonlinear_with_potential_duplicates()
+    test_several_equalities()
+    test_several_constraints_with_ineq()
+    test_model()
+    test_model_with_ineq()
+    test_model_bad_constr()
+    test_model_bad_constr_no_ineq()
+    test_function_with_variable_squared()
     return
 end
 
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    println(test_model_bad_constr_no_ineq())
-    #TestIdentifyVariables.main()
+    TestIdentifyVariables.runtests()
 end
