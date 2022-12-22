@@ -18,7 +18,6 @@ end
 function test_flow_model_with_inequalities()
     m = get_flow_model_with_inequalities()
     eq_cons = get_equality_constraints(m)
-    println("N. eq con: ", length(eq_cons))
     @test length(eq_cons) == 8
     return
 end
