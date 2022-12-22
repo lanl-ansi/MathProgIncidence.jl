@@ -1,15 +1,13 @@
 module TestGetEquality
 import JuMP as jmp
 import MathOptInterface as moi
-using Test: @test_throws
-# I think these "include"s are CWD-specific and therefore not robust.
-# From what I see in the JuMP src, they actually aren't CWD-specific.
-include("models.jl")
-include("get_equality.jl")
-using .GetEquality: get_equality_constraints
+using Test: @test, @test_throws
+using JuMPIn: get_equality_constraints
+
+include("models.jl") # Models
 
 function get_flow_model_with_inequalities()
-    m = models.make_degenerate_flow_model()
+    m = Models.make_degenerate_flow_model()
     # TODO: Some assertions with the @assert macro
     @jmp.constraint(m, ineq1, m[:x][1] >= 0)
     @jmp.constraint(m, ineq2, m[:x][1]^2 + m[:x][2]^2 <= 0.5)
@@ -21,7 +19,7 @@ function test_flow_model_with_inequalities()
     m = get_flow_model_with_inequalities()
     eq_cons = get_equality_constraints(m)
     println("N. eq con: ", length(eq_cons))
-    @assert(length(eq_cons) == 8)
+    @test length(eq_cons) == 8
     return
 end
 
@@ -32,7 +30,7 @@ function test_with_vector_constraint()
     @test_throws(TypeError, eq_cons = get_equality_constraints(m))
 end
 
-function main()
+function runtests()
     test_flow_model_with_inequalities()
     test_with_vector_constraint()
 end
@@ -40,5 +38,5 @@ end
 end # module TestGetEquality
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    TestGetEquality.main()
+    TestGetEquality.runtests()
 end

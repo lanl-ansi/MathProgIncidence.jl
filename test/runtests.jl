@@ -8,4 +8,9 @@ using Test
         TestIdentifyVariables.runtests()
     end
 
+    @testset "GetEquality" begin
+        include("get_equality.jl")
+        TestGetEquality.runtests()
+    end
+
 end
