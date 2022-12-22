@@ -1,5 +1,8 @@
-include("interface.jl") # module Interface
-import .Interface as interface
+module TestInterface
+
+using Test: @test, @test_throws
+import JuMP as jmp
+import JuMPIn as ji
 
 # Note: Do not import from IncidenceGraphInterface here; this will
 # lead to the module being defined multiple times, and causes problems
@@ -7,9 +10,7 @@ import .Interface as interface
 #using .Interface: IncidenceGraphInterface
 
 include("models.jl")
-using .models: make_degenerate_flow_model
-using Test: @test, @test_throws
-import JuMP as jmp
+using .Models: make_degenerate_flow_model
 
 
 function _test_igraph_fields(igraph, constraints, variables)
@@ -31,7 +32,7 @@ end
 
 function test_construct_interface()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
 
     variables = [
         m[:x][1],
@@ -65,7 +66,7 @@ function test_construct_interface_rectangular()
         sum_flow_eqn,
         m[:flow] == sum(m[:flow_comp][:]),
     )
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
 
     variables = [
         m[:x][1],
@@ -95,9 +96,9 @@ end
 
 function test_get_adjacent_to_linear_constraint()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
     con = m[:sum_comp_eqn]
-    adjacent = interface.get_adjacent(igraph, con)
+    adjacent = ji.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:x][2], m[:x][3]])
     return nothing
 end
@@ -105,9 +106,9 @@ end
 
 function test_get_adjacent_to_quadratic_constraint()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
     con = m[:comp_dens_eqn][1]
-    adjacent = interface.get_adjacent(igraph, con)
+    adjacent = ji.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:rho]])
     return nothing
 end
@@ -115,9 +116,9 @@ end
 
 function test_get_adjacent_to_nonlinear_constraint()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
     con = m[:bulk_dens_eqn]
-    adjacent = interface.get_adjacent(igraph, con)
+    adjacent = ji.get_adjacent(igraph, con)
     @test Set(adjacent) == Set([m[:x][1], m[:x][2], m[:x][3], m[:rho]])
     return nothing
 end
@@ -125,9 +126,9 @@ end
 
 function test_get_adjacent_to_variable()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
+    igraph = ji.IncidenceGraphInterface(m)
     var = m[:x][2]
-    adjacent = interface.get_adjacent(igraph, var)
+    adjacent = ji.get_adjacent(igraph, var)
     incident_cons = [
         m[:sum_comp_eqn],
         m[:bulk_dens_eqn],
@@ -141,14 +142,14 @@ end
 
 function test_maximum_matching()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
-    matching = interface.maximum_matching(igraph)
+    igraph = ji.IncidenceGraphInterface(m)
+    matching = ji.maximum_matching(igraph)
     @test length(matching) == 7
     for (con, var) in matching
         @test typeof(con) <: jmp.ConstraintRef
         @test typeof(var) <: jmp.VariableRef
-        @test var in Set(interface.get_adjacent(igraph, con))
-        @test con in Set(interface.get_adjacent(igraph, var))
+        @test var in Set(ji.get_adjacent(igraph, con))
+        @test con in Set(ji.get_adjacent(igraph, var))
     end
     possibly_unmatched_vars = Set([
         m[:flow_comp][1],
@@ -180,8 +181,8 @@ end
 
 function test_dulmage_mendelsohn()
     m = make_degenerate_flow_model()
-    igraph = interface.IncidenceGraphInterface(m)
-    con_dmp, var_dmp = interface.dulmage_mendelsohn(igraph)
+    igraph = ji.IncidenceGraphInterface(m)
+    con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
     con_undercon = con_dmp.underconstrained
     con_overcon = cat(con_dmp.overconstrained, con_dmp.unmatched, dims=1)
     @test Set(con_undercon) == Set([
@@ -205,8 +206,7 @@ function test_dulmage_mendelsohn()
     return nothing
 end
 
-
-function main()
+function runtests()
     test_construct_interface()
     test_construct_interface_rectangular()
     test_get_adjacent_to_linear_constraint()
@@ -217,7 +217,9 @@ function main()
     test_dulmage_mendelsohn()
 end
 
+end
+
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    main()
+    TestInterface.runtests()
 end

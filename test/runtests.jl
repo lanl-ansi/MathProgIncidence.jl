@@ -18,4 +18,9 @@ using Test
         TestIncidenceGraph.runtests()
     end
 
+    @testset "Interface" begin
+        include("interface.jl")
+        TestInterface.runtests()
+    end
+
 end
