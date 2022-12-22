@@ -13,4 +13,11 @@ get_equality_constraints = GetEquality.get_equality_constraints
 include("incidence_graph.jl") # IncidenceGraph
 get_bipartite_incidence_graph = IncidenceGraph.get_bipartite_incidence_graph
 
+# Methods to apply graph algorithms to JuMP models
+include("interface.jl") # Interface
+IncidenceGraphInterface = Interface.IncidenceGraphInterface
+get_adjacent = Interface.get_adjacent
+maximum_matching = Interface.maximum_matching
+dulmage_mendelsohn = Interface.dulmage_mendelsohn
+
 end
