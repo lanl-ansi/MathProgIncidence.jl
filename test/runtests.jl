@@ -13,4 +13,9 @@ using Test
         TestGetEquality.runtests()
     end
 
+    @testset "IncidenceGraph" begin
+        include("incidence_graph.jl")
+        TestIncidenceGraph.runtests()
+    end
+
 end
