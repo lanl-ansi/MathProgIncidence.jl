@@ -5,8 +5,10 @@ import JuMP as jmp
 include("incidence_graph.jl")
 using .IncidenceGraph: get_bipartite_incidence_graph
 
-include("maximum_matching.jl") # maximum_matching
-include("dulmage_mendelsohn.jl") # dulmage_mendelsohn
+include("maximum_matching.jl")
+import .MaximumMatching: maximum_matching
+include("dulmage_mendelsohn.jl")
+import .DulmageMendelsohn: dulmage_mendelsohn
 
 import Graphs as gjl
 import BipartiteMatching as bpm

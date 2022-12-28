@@ -1,5 +1,8 @@
+module DulmageMendelsohn
+
 import Graphs as gjl
-include("maximum_matching.jl") # _is_valid_bipartition, maximum_matching
+include("maximum_matching.jl") # MaximumMatching
+using .MaximumMatching: _is_valid_bipartition, maximum_matching
 
 
 """
@@ -132,4 +135,6 @@ function dulmage_mendelsohn(graph::gjl.Graph, set1::Set)
         matched_with_reachable1,
         other2,
     ))
+end
+
 end
