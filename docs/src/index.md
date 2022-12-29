@@ -9,6 +9,6 @@ should use JuMPIn, you may find the [Overview](@ref) helpful.
 
 ## Resources
 See the following resources to get started:
-- Installation guide (TODO)
-- Minimal example (TODO)
+- Installation guide (TODO -- This will go last, after the package is released)
+- [Simple Example](@ref)
 - API reference (TODO)
