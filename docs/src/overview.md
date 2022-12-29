@@ -49,8 +49,8 @@ In addition, nonlinear local optimization algorithms such as
 (which are used as subroutines of global and mixed-integer nonlinear
 solvers)
 assume that the Jacobian of equality constraints is full row rank.
-A convenient sufficient condition for this is to fix the variables that
+A convenient way to check this is to fix the variables that
 you intend to be degrees of freedom, then check the Jacobian of equality
 constraints for singularity. If this Jacobian is nonsingular, the full equality
-Jacobian is full row rank. Otherwise, this assumption is violated, and
+Jacobian is full row rank. Otherwise, this assumption may be violated, and
 these algorithms may help deteremine the reason why.
