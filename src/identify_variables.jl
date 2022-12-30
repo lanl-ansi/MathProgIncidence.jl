@@ -1,3 +1,7 @@
+"""
+Utility functions for identifying variables that participate in constraints.
+
+"""
 module IdentifyVariables
 import JuMP as jmp
 import MathOptInterface as moi
@@ -13,13 +17,50 @@ using .GetEquality: get_equality_constraints
 
 
 """
-    identify_unique_variables(
-        model::Model, include_inequality::Bool=false
-    )
+    identify_unique_variables(constraints::Vector)::Vector{JuMP.VariableRef}
 
-Returns a vector of variables that participate in constraints in the model.
+Return a vector of variables that participate in the provided constraints.
 
 Each variable appears at most one time in the returned vector.
+If we receive a vector, we just assume it is a vector of constraints.
+This is because I couldn't get an argument of type `Vector{ConstraintRef}`
+to work...
+
+Note that this function is also accessible via the JuMPIn module.
+
+# Example
+```julia
+julia> using JuMP
+julia> import JuMPIn as ji
+julia> m = Model()
+julia> @variable(m, v[1:3])
+julia> @constraint(m, eq_1, v[2] == 1)
+julia> @NLconstraint(m, eq_2, v[2]*v[3]^1.5 == 2)
+julia> vars = ji.identify_unique_variables([eq_1, eq_2])
+julia> println(vars)
+VariableRef[v[2], v[3]]
+```
+
+"""
+function identify_unique_variables(
+    constraints::Vector,
+    # FIXME: Couldn't get this working with Vector{ConstraintRef}...
+)::Vector{jmp.VariableRef}
+    variables = Vector{jmp.VariableRef}()
+    for con in constraints
+        append!(variables, identify_unique_variables(con))
+    end
+    return _filter_duplicates(variables)
+end
+
+
+"""
+    identify_unique_variables(model::JuMP.Model, include_inequality::Bool=false)
+
+Return a vector of variables that participate in constraints in the model.
+
+Each variable appears at most one time in the returned vector.
+
 """
 function identify_unique_variables(
     model::jmp.Model; include_inequality::Bool=false,
@@ -42,35 +83,12 @@ end
 
 
 """
-    identify_unique_variables(
-        constraints::Vector,
-    )::Vector{VariableRef}
+    identify_unique_variables(constraint::JuMP.ConstraintRef)
 
-Returns a vector of variables that participate in the provided constraints.
+Return a vector containing the variables that participate in this constraint.
 
 Each variable appears at most one time in the returned vector.
-If we receive a vector, we just assume it is a vector of constraints.
-This is because I couldn't get an argument of type Vector{ConstraintRef}
-to work...
-"""
-function identify_unique_variables(
-    constraints::Vector,
-    # FIXME: Couldn't get this working with Vector{ConstraintRef}...
-)::Vector{jmp.VariableRef}
-    variables = Vector{jmp.VariableRef}()
-    for con in constraints
-        append!(variables, identify_unique_variables(con))
-    end
-    return _filter_duplicates(variables)
-end
 
-
-"""
-    identify_unique_variables(constraint::ConstraintRef)
-
-Returns a vector containing the variables that participate in this constraint.
-
-Each variable appears at most one time in the returned vector.
 """
 function identify_unique_variables(
     constraint::jmp.ConstraintRef,
@@ -81,15 +99,16 @@ end
 
 """
     identify_unique_variables(
-        constraint::ConstraintRef,
-        index::ConstraintIndex,
-    )::Vector{VariableRef}
+        constraint::JuMP.ConstraintRef,
+        index::JuMP.ConstraintIndex,
+    )::Vector{JuMP.VariableRef}
 
-Returns a vector containing the variables that participate in this constraint.
+Return a vector containing the variables that participate in this constraint.
 
 Each variable appears at most one time in the returned vector.
 The `index` argument is provided so we know whether we have a "regular"
 constraint or a nonlinear constraint.
+
 """
 function identify_unique_variables(
     constraint::jmp.ConstraintRef,
@@ -105,15 +124,16 @@ end
 
 """
     identify_unique_variables(
-        constraint::ConstraintRef,
-        index::MOI.Nonlinear.ConstraintIndex,
-    )::Vector{VariableRef}
+        constraint::JuMP.ConstraintRef,
+        index::MathOptInterface.Nonlinear.ConstraintIndex,
+    )::Vector{JuMP.VariableRef}
 
-Returns a vector containing the variables that participate in this constraint.
+Return a vector containing the variables that participate in this constraint.
 
 Each variable appears at most one time in the returned vector.
 The `index` argument is provided so we know whether we have a "regular"
 constraint or a nonlinear constraint.
+
 """
 function identify_unique_variables(
     constraint::jmp.ConstraintRef,
@@ -153,17 +173,17 @@ end
 
 
 """
-    identify_unique_variables(
-        fcn::Union{ScalarQuadraticFunction, ScalarAffineFunction},
-    )::Vector{VariableIndex}
+    identify_unique_variables(fcn)::Vector{JuMP.VariableIndex}
 
-Returns the variables that appear in the provided function.
+Return the variables that appear in the provided MathOptInterface function.
 
-NOTE: Only ScalarQuadraticFunction and ScalarAffineFunction are supported.
+# Implementation
+Only `ScalarQuadraticFunction` and `ScalarAffineFunction` are supported.
 This can be changed there is demand for other functions. For each type of
-supported function, the _get_variable_terms function should be defined.
-Then, for the type of each term, an additional identify_unique_variables
+supported function, the `_get_variable_terms` function should be defined.
+Then, for the type of each term, an additional `identify_unique_variables`
 function should be implemented.
+
 """
 function identify_unique_variables(
     fcn::Union{moi.ScalarQuadraticFunction, moi.ScalarAffineFunction},
@@ -193,9 +213,12 @@ end
 """
     _get_variable_terms(fcn)
 
-Returns a tuple of vectors of terms for the provided MOI function.
+Return a tuple of vectors of terms for the provided MathOptInterface function.
 
-Currently implemented only for ScalarQuadraticFunction and ScalarAffineFunction.
+# Implementation
+Currently implemented only for `ScalarQuadraticFunction` and
+`ScalarAffineFunction`.
+
 """
 function _get_variable_terms(fcn::moi.ScalarQuadraticFunction)
     return (fcn.quadratic_terms, fcn.affine_terms)
@@ -209,10 +232,14 @@ end
 """
     identify_unique_variables(term)
 
-Returns the variables that participate in the provided term of a MOI function.
+Return the variables that participate in the provided term of a
+MathOptInterface function.
 
-A variable appears at most one time in the returned vector. Currently
-implemented only for ScalarAffineTerm and ScalarQuadraticTerm.
+A variable appears at most one time in the returned vector.
+
+# Implementation
+Currently implemented only for `ScalarAffineTerm` and `ScalarQuadraticTerm`.
+
 """
 function identify_unique_variables(
     term::moi.ScalarAffineTerm,
@@ -236,7 +263,8 @@ end
 """
     _filter_duplicates
 
-Returns a vector of variables of indices that does not contain duplicates.
+Return a vector of variables of indices that does not contain duplicates.
+
 """
 function _filter_duplicates(
     indices::Vector{moi.VariableIndex},
