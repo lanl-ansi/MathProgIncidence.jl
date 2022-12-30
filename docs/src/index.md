@@ -8,7 +8,10 @@ If you are familiar with JuMP and wondering whether you
 should use JuMPIn, you may find the [Overview](@ref) helpful.
 
 ## Resources
-See the following resources to get started:
-- Installation guide (TODO -- This will go last, after the package is released)
-- [Simple Example](@ref)
-- API reference (TODO)
+This documentation contains the following resources:
+- **Installation guide** (TODO -- This will go last, after the package is
+  released)
+- **[Simple Example](@ref)** -- A simple demonstration of the intended use of
+  JuMPIn
+- **API Reference** -- Call signatures and documentation for the public API of
+  JuMPIn
