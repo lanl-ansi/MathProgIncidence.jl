@@ -1,3 +1,10 @@
+"""
+A JuMP interface to the algorithms implemented by JuMPIn
+
+All public methods in this module (those documented below) are also accessible
+via the `JuMPIn` module.
+
+"""
 module Interface
 
 import JuMP as jmp
@@ -62,6 +69,29 @@ function _maps_to_nodes(con_map, var_map)
     return nodes
 end
 
+"""
+    IncidenceGraphInterface(model)
+
+A bipartite incidence graph of JuMP constraints and variables.
+
+This is the primary data type accepted by the algorithms implemented in
+the remainder of this module.
+This type can be instantiated with a JuMP model or a tuple of
+`(graph, con_node_map, var_node_map)`, as returned by
+`get_bipartite_incidence_graph`.
+
+# Example
+```julia
+using JuMP
+import JuMPIn as ji
+m = Model();
+@variable(m, v[1:3]);
+@constraint(m, eq_1, v[1] + v[3]^2 == 1.0);
+@NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0);
+graph = ji.IncidenceGraphInterface(m);
+```
+
+"""
 struct IncidenceGraphInterface
     _graph
     _con_node_map
