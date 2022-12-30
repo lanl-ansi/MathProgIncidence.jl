@@ -32,13 +32,15 @@ Note that this function is also accessible via the JuMPIn module.
 ```julia-repl
 julia> using JuMP
 julia> import JuMPIn as ji
-julia> m = Model()
-julia> @variable(m, v[1:3])
-julia> @constraint(m, eq_1, v[2] == 1)
-julia> @NLconstraint(m, eq_2, v[2]*v[3]^1.5 == 2)
-julia> vars = ji.identify_unique_variables([eq_1, eq_2])
-julia> println(vars)
-VariableRef[v[2], v[3]]
+julia> m = Model();
+julia> @variable(m, v[1:3]);
+julia> @constraint(m, eq_1, v[2] == 1);
+julia> @NLconstraint(m, eq_2, v[2]*v[3]^1.5 == 2);
+julia> vars = ji.identify_unique_variables([eq_1, eq_2]);
+julia> display(vars)
+2-element Vector{VariableRef}:
+ v[2]
+ v[3]
 ```
 
 """
