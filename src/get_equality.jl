@@ -1,5 +1,6 @@
 """
 Utility functions for identifying JuMP constraints that define equalities.
+
 """
 module GetEquality
 import JuMP as jmp
@@ -118,6 +119,18 @@ end
 Return a vector of equality constraints in the provided model.
 
 This function is also accessible via the `JuMPIn` module.
+
+# Example
+```julia
+julia> using JuMP
+julia> import JuMPIn as ji
+julia> m = Model()
+julia> @variable(m, v)
+julia> @constraint(m, v == 1)
+julia> eq_cons = ji.get_equality_constraints(m)
+julia> println(eq_cons)
+ConstraintRef[eq_con_1 : v = 1.0]
+```
 
 """
 function get_equality_constraints(model::jmp.Model)::Vector{jmp.ConstraintRef}
