@@ -1,3 +1,6 @@
+"""
+Utility functions for identifying JuMP constraints that define equalities.
+"""
 module GetEquality
 import JuMP as jmp
 import MathOptInterface as moi
@@ -61,12 +64,35 @@ end
 # Type{<:SomeType} enforces that the argument must be a Type, rather than
 # an instance of the type. "issubclass", where what I'm doing below is
 # "isinstance"
+"""
+    set_implies_equality(set::T)::Bool where T<:MathOptInterface.AbstractSet
+
+Detect whether the set defines an equality constraint, i.e. is a singleton.
+
+# Implementation
+Methods are defined for the following `MathOptInterface.Set`s:
+- `MathOptInterface.EqualTo` 
+- `MathOptInterface.Interval`
+
+If a `MathOptInterface.AbstractVectorSet` is provided, an error is raised.
+For any other type of set, `false` is returned. To support additional
+types of constraints in [`is_equality`](@ref) and
+[`get_equality_constraints`](@ref), additional methods of
+`set_implies_equality` should be defined.
+
+"""
 function set_implies_equality(
     set::T
 )::Bool where T<:moi.AbstractSet
     return false
 end
 
+"""
+    is_equality(constraint::JuMP.Model)::Bool
+
+Detect whether a constraint is an equality constraint.
+
+"""
 function is_equality(constraint::jmp.ConstraintRef)::Bool
     model = constraint.model
     index = constraint.index
@@ -86,6 +112,14 @@ function get_equality_constraints(
     return eq_cons
 end
 
+"""
+    get_equality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
+
+Return a vector of equality constraints in the provided model.
+
+This function is also accessible via the `JuMPIn` module.
+
+"""
 function get_equality_constraints(model::jmp.Model)::Vector{jmp.ConstraintRef}
     constraints = jmp.all_constraints(
         model,
