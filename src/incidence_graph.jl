@@ -1,3 +1,8 @@
+"""
+Utility functions for getting the incidence graph of JuMP constraints and
+variables.
+
+"""
 module IncidenceGraph
 
 import JuMP as jmp
@@ -9,9 +14,66 @@ using .GetEquality: get_equality_constraints
 include("identify_variables.jl")
 using .IdentifyVariables: identify_unique_variables
 
+"""
+    get_bipartite_incidence_graph(model, include_inequality = false)
+
+Return the bipartite incidence graph of (scalar) variables and constraints
+in the JuMP model.
+
+The `include_inequality` argument determines whether inequality constraints
+(constraints with non-singleton sets) should be included in the graph.
+
+This function returns a tuple `(graph, con_node_map, var_node_map)`
+- `graph` -- a tuple `(A, B, E)` where `A` and `B` contain the integer nodes
+  in the bipartite sets for constraints and variables and `E` contains
+  edges in the form of tuples of integers `(a, b)`, where `a` is in 
+  `A` and `b` is in `B`.
+- `con_node_map` -- a `Dict` mapping JuMP `ConstraintRef`s to nodes
+- `var_node_map` -- a `Dict` mapping JuMP `VariableRef`s to nodes
+
+The constraints in the graph are all the (by default, equality) constraints in
+the model, and the variables are those that participate in these constraints.
+
+This function can also be accessed via the `JuMPIn` module.
+
+# Example
+```julia-repl
+julia> using JuMP
+julia> import JuMPIn as ji
+julia> m = Model();
+julia> @variable(m, v[1:3]);
+julia> @constraint(m, eq_1, v[1] + v[3]^2 == 1.0);
+julia> @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0);
+julia> graph, con_node_map, var_node_map = ji.get_bipartite_incidence_graph(m);
+julia> A, B, E = graph;
+julia> M = length(A);
+julia> N = length(B);
+julia> imat = zeros(M, N);
+julia> for (a, b) in E
+julia>     imat[a, b-M] = 1.0;
+julia> end
+julia> display(imat)
+2×3 Matrix{Float64}:
+ 1.0  1.0  0.0
+ 0.0  1.0  1.0
+```
+
+# Convention
+The returned graph follows a convention where, for a JuMP model with
+N constraints and M variables, the first N nodes are constraints
+and nodes N+1 through N+M are variables. Nodes are always contiguous
+integers starting at 1.
+
+# Methods
+Methods are implemented that accept a JuMP `Model`, a vector of
+`ConstraintRef`s, and vectors of `ConstraintRef`s and `VariableRef`s.
+If variables are provided, then only these variables participate in the graph,
+regardless of which variables participate in the constraints.
+
+"""
 function get_bipartite_incidence_graph(
     model::jmp.Model;
-    include_inequality::Bool=false,
+    include_inequality::Bool = false,
 )
     if include_inequality
         constraints = jmp.all_constraints(
@@ -58,7 +120,9 @@ function get_bipartite_incidence_graph(
     edges = Vector{Tuple{Int64, Int64}}()
     for con in constraints
         for var in identify_unique_variables(con)
-            push!(edges, (con_node_map[con], var_node_map[var]))
+            if var in keys(var_node_map)
+                push!(edges, (con_node_map[con], var_node_map[var]))
+            end
         end
     end
     graph = (con_nodes, var_nodes, edges)
