@@ -121,7 +121,7 @@ Return a vector of equality constraints in the provided model.
 This function is also accessible via the `JuMPIn` module.
 
 # Example
-```julia
+```julia-repl
 julia> using JuMP
 julia> import JuMPIn as ji
 julia> m = Model()
