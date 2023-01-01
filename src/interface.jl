@@ -20,20 +20,6 @@ import .DulmageMendelsohn: dulmage_mendelsohn
 import Graphs as gjl
 import BipartiteMatching as bpm
 
-# TODO: Declare type: IncidenceGraph, or something
-# Would like to construct e.g. IncidenceGraph(model)
-# Attributes:
-# - _graph
-# - _var_node_map
-# - _con_node_map
-# Keep this private for now, as I don't really want a user interacting with these
-# at all.
-# Would be great to interact via square bracket syntax, e.g.
-# cons = igraph[var]
-# which would give me a vector of all adjacent constraints.
-# 1. How to create a struct type?
-# 2. How to define a constructor for a struct?
-# 3. How to access the [] syntax?
 
 """
 Utility function to convert a tuple of nodes and edges into a
@@ -54,6 +40,7 @@ function _tuple_to_graphs_jl(bip_graph)
     return graph
 end
 
+
 function _maps_to_nodes(con_map, var_map)
     n_nodes = length(con_map) + length(var_map)
     nodes = Vector{Any}([nothing for _ in 1:n_nodes])
@@ -69,8 +56,9 @@ function _maps_to_nodes(con_map, var_map)
     return nodes
 end
 
+
 """
-    IncidenceGraphInterface(model)
+    IncidenceGraphInterface(model; include_inequality = false)
 
 A bipartite incidence graph of JuMP constraints and variables.
 
@@ -102,6 +90,7 @@ struct IncidenceGraphInterface
     _nodes
 end
 
+
 IncidenceGraphInterface(
     args::Tuple{Tuple, Dict, Dict}
 ) = IncidenceGraphInterface(
@@ -110,23 +99,23 @@ IncidenceGraphInterface(
     args[3],
     _maps_to_nodes(args[2], args[3]),
 )
-# Actually want the _graph field to be a Graphs.jl object
-# Need to make sure:
-# - I have a bipartite matching algorithm available
-# - I have an SCC/top sort algorithm available
 
-IncidenceGraphInterface(m::jmp.Model) = IncidenceGraphInterface(
-    get_bipartite_incidence_graph(m)
+
+IncidenceGraphInterface(
+    m::jmp.Model;
+    include_inequality::Bool = false,
+) = IncidenceGraphInterface(
+    get_bipartite_incidence_graph(m, include_inequality = include_inequality)
 )
 
-# API I would like:
-# - Algorithms: matching, triangularize, dulmage-mendelsohn
-# - Potentially: Vertex elimination, other partitions, think about
-#   API for incidence graph of KKT system. Here, access of nodes
-#   become challenging, because we have nodes due to variables,
-#   constraints (duals), and bounds. This will require some thought.
-# - Access adjacent nodes in graph
-# - Other attributes like degree can be obtained from adjacency.
+
+IncidenceGraphInterface(
+    constraints::Vector{jmp.ConstraintRef},
+    variables::Vector{jmp.VariableRef},
+) = IncidenceGraphInterface(
+    get_bipartite_incidence_graph(constraints, variables)
+)
+
 
 """
     get_adjacent(
@@ -146,6 +135,7 @@ function get_adjacent(
     variables = [igraph._nodes[n] for n in var_nodes]
     return variables
 end
+
 
 """
     get_adjacent(
@@ -182,6 +172,7 @@ function get_adjacent(
     return constraints
 end
 
+
 """
     maximum_matching(igraph::IncidenceGraphInterface)::Dict
 
@@ -206,7 +197,9 @@ Dict{ConstraintRef{Model, C, ScalarShape} where C, VariableRef} with 2 entries:
 ```
 
 """
-function maximum_matching(igraph::IncidenceGraphInterface)
+function maximum_matching(
+    igraph::IncidenceGraphInterface
+)::Dict{jmp.ConstraintRef, jmp.VariableRef}
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon) # Relying on graph convention here.
@@ -220,34 +213,9 @@ end
 function maximum_matching(
     constraints::Vector{jmp.ConstraintRef},
     variables::Vector{jmp.VariableRef},
-)
-end
-
-
-function maximum_matching(
-    igraph::IncidenceGraphInterface,
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
-)
-end
-
-
-function block_triangularize(igraph::IncidenceGraphInterface)
-end
-
-
-function block_triangularize(
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
-)
-end
-
-
-function block_triangularize(
-    igraph::IncidenceGraphInterface,
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
-)
+)::Dict{jmp.ConstraintRef, jmp.VariableRef}
+    igraph = IncidenceGraphInterface(constraints, variables)
+    return maximum_matching(igraph)
 end
 
 
@@ -358,14 +326,8 @@ function dulmage_mendelsohn(
     constraints::Vector{jmp.ConstraintRef},
     variables::Vector{jmp.VariableRef},
 )
-end
-
-
-function dulmage_mendelsohn(
-    igraph::IncidenceGraphInterface,
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
-)
+    igraph = IncidenceGraphInterface(constraints, variables)
+    return dulmage_mendelsohn(igraph)
 end
 
 
