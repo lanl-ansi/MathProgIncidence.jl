@@ -1,7 +1,6 @@
 #  ___________________________________________________________________________
 #
 #  JuMPIn.jl: JuMP Incidence Graph Analysis
-#
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -14,6 +13,8 @@
 #  in this material to reproduce, prepare derivative works, distribute copies
 #  to the public, perform publicly and display publicly, and to permit others
 #  to do so.
+#
+#  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
 module TestIdentifyVariables
