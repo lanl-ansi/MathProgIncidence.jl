@@ -12,6 +12,14 @@ TODO. Eventually, I would like the following command to work:
 ```julia
 ]add JuMPIn
 ```
+For now, only local installation is possible:
+```
+$ git clone https://github.com/lanl-ansi/JuMPIn.jl
+$ cd JuMPIn.jl
+$ julia
+julia> ]
+(v1.8) pkg> add .
+```
 
 ## Dependencies
 This package depends on
