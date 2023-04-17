@@ -1,6 +1,6 @@
-# JuMPIn
-**JuMP In**cidence. Tools for constructing and analyzing the incidence
-graph or matrix of variables and constraints in a JuMP model.
+# JuMPIn.jl
+**JuMP In**cidence Graph Analysis. Tools for constructing and analyzing the
+incidence graph or matrix of variables and constraints in a JuMP model.
 
 If you are wondering what JuMP is, please see
 [here](https://jump.dev/JuMP.jl/stable/).
