@@ -1,5 +1,5 @@
-# JuMPIn
-**JuMP** **In**cidence. Tools for constructing and analyzing the
+# JuMPIn.jl
+**JuMP** **In**cidence Graph Analysis. Tools for constructing and analyzing the
 incidence graph or matrix of variables and constraints in a JuMP model.
 
 These tools can be used to detect whether and (approximately) why the
@@ -45,7 +45,7 @@ uc_con = con_dmp.underconstrained
 uc_var = cat(var_dmp.unmatched, var_dmp.underconstrained, dims = 1)
 
 println("Overconstrained subsystem")
-println("--------------------------")
+println("-------------------------")
 println("Constraints")
 for con in oc_con
     println("  $con")
@@ -69,7 +69,8 @@ end
 ```
 
 ## License
-TODO
+JuMPIn.jl is open-source software released under the 3-clause BSD license.
+See LICENSE.md for more information.
 
 ## Citation
 WIP
