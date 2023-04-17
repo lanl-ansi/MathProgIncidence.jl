@@ -1,6 +1,6 @@
 name = "JuMPIn"
 uuid = "892fab00-3092-4bd0-9c46-66676a93f84e"
-authors = ["Robert Parker <robbybparker@gmail.com> and contributors"]
+authors = ["Robert Parker and contributors"]
 version = "0.1.0"
 
 [deps]
