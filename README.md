@@ -20,6 +20,9 @@ This package depends on
 [BipartiteMatching.jl](https://github.com/IsaacRudich/BipartiteMatching.jl),
 and the dependencies thereof.
 
+## Compatability
+TODO: Automated tests with latest JuMP/Julia.
+
 ## Example
 ```julia
 using JuMP
