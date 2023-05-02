@@ -179,8 +179,8 @@ function identify_unique_variables(
             # am throwing this error to be defensive.
             throw(DomainError(
                 node.type,
-                """Encountered a NODE_VARIABLE while parsing constraint\
-                   $constraint,\nbut we do not have an NLPEvaluator\
+                """Encountered a NODE_VARIABLE while parsing constraint
+                   $constraint,\nbut we do not have an NLPEvaluator
                    to resolve this into a NODE_MOI_VARIABLE.
                    Something has gone wrong.""",
             ))
