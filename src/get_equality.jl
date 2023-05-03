@@ -21,7 +21,7 @@
 Utility functions for identifying JuMP constraints that define equalities.
 
 """
-module GetEquality
+
 import JuMP as jmp
 import MathOptInterface as moi
 
@@ -160,5 +160,3 @@ function get_equality_constraints(model::jmp.Model)::Vector{jmp.ConstraintRef}
     )
     return get_equality_constraints(constraints)
 end
-
-end # module get_equality

@@ -21,12 +21,11 @@
 Utility functions for identifying variables that participate in constraints.
 
 """
-module IdentifyVariables
+
 import JuMP as jmp
 import MathOptInterface as moi
 
-include("get_equality.jl")
-using .GetEquality: get_equality_constraints
+import JuMPIn: get_equality_constraints
 
 
 # TODO: This file implements functions that filter duplicates from the
@@ -318,6 +317,4 @@ function _filter_duplicates(
         end
     end
     return filtered
-end
-
 end

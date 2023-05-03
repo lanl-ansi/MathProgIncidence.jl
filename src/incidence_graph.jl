@@ -22,16 +22,11 @@ Utility functions for getting the incidence graph of JuMP constraints and
 variables.
 
 """
-module IncidenceGraph
 
 import JuMP as jmp
 import MathOptInterface as moi
 
-include("get_equality.jl")
-using .GetEquality: get_equality_constraints
-
-include("identify_variables.jl")
-using .IdentifyVariables: identify_unique_variables
+import JuMPIn: get_equality_constraints, identify_unique_variables
 
 """
     get_bipartite_incidence_graph(model, include_inequality = false)
@@ -152,5 +147,3 @@ function get_bipartite_incidence_graph(
     # have ordered vectors of constraints and variables.
     return graph, con_node_map, var_node_map
 end
-
-end # module IncidenceGraph

@@ -24,17 +24,10 @@ All public methods in this module (those documented below) are also accessible
 via the `JuMPIn` module.
 
 """
-module Interface
 
 import JuMP as jmp
 
-include("incidence_graph.jl")
-using .IncidenceGraph: get_bipartite_incidence_graph
-
-include("maximum_matching.jl")
-import .MaximumMatching: maximum_matching
-include("dulmage_mendelsohn.jl")
-import .DulmageMendelsohn: dulmage_mendelsohn
+import JuMPIn: get_bipartite_incidence_graph, maximum_matching
 
 import Graphs as gjl
 import BipartiteMatching as bpm
@@ -348,6 +341,3 @@ function dulmage_mendelsohn(
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end
-
-
-end # module Interface
