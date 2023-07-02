@@ -48,8 +48,6 @@ This function returns a tuple `(graph, con_node_map, var_node_map)`
 The constraints in the graph are all the (by default, equality) constraints in
 the model, and the variables are those that participate in these constraints.
 
-This function can also be accessed via the `JuMPIn` module.
-
 # Example
 ```julia-repl
 julia> using JuMP

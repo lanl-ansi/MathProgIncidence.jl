@@ -44,8 +44,6 @@ If we receive a vector, we just assume it is a vector of constraints.
 This is because I couldn't get an argument of type `Vector{ConstraintRef}`
 to work...
 
-Note that this function is also accessible via the JuMPIn module.
-
 # Example
 ```julia-repl
 julia> using JuMP

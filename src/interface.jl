@@ -20,9 +20,6 @@
 """
 A JuMP interface to the algorithms implemented by JuMPIn
 
-All public methods in this module (those documented below) are also accessible
-via the `JuMPIn` module.
-
 """
 
 import JuMP as jmp
