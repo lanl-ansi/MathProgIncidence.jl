@@ -25,7 +25,7 @@ Utility functions for identifying JuMP constraints that define equalities.
 import JuMP as jmp
 import MathOptInterface as moi
 
-function get_set_of_constraint(
+function _get_set_of_constraint(
     model::jmp.Model,
     constraint::jmp.ConstraintRef,
     index::moi.ConstraintIndex,
@@ -34,7 +34,7 @@ function get_set_of_constraint(
     return set
 end
 
-function get_set_of_constraint(
+function _get_set_of_constraint(
     model::jmp.Model,
     constraint::jmp.ConstraintRef,
     index::moi.Nonlinear.ConstraintIndex,
@@ -116,7 +116,7 @@ Detect whether a constraint is an equality constraint.
 function is_equality(constraint::jmp.ConstraintRef)::Bool
     model = constraint.model
     index = constraint.index
-    set = get_set_of_constraint(model, constraint, index)
+    set = _get_set_of_constraint(model, constraint, index)
     return set_implies_equality(set)
 end
 
