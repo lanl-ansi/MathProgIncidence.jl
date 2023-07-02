@@ -22,8 +22,8 @@ Utility functions for identifying variables that participate in constraints.
 
 """
 
-import JuMP as jmp
-import MathOptInterface as moi
+import JuMP
+import MathOptInterface as MOI
 
 import JuMPIn: get_equality_constraints
 
@@ -63,8 +63,8 @@ julia> display(vars)
 function identify_unique_variables(
     constraints::Vector,
     # FIXME: Couldn't get this working with Vector{ConstraintRef}...
-)::Vector{jmp.VariableRef}
-    variables = Vector{jmp.VariableRef}()
+)::Vector{JuMP.VariableRef}
+    variables = Vector{JuMP.VariableRef}()
     for con in constraints
         append!(variables, identify_unique_variables(con))
     end
@@ -81,14 +81,14 @@ Each variable appears at most one time in the returned vector.
 
 """
 function identify_unique_variables(
-    model::jmp.Model; include_inequality::Bool=false,
-)::Vector{jmp.VariableRef}
+    model::JuMP.Model; include_inequality::Bool=false,
+)::Vector{JuMP.VariableRef}
     if include_inequality
         # Note that this may include some constraints which are not compatible
         # with downstream function calls (e.g. constraints where the function
         # and terms are vectors). We will allow downstream errors to be raised
         # rather than silently ignoring these constraints.
-        constraints = jmp.all_constraints(
+        constraints = JuMP.all_constraints(
             model,
             # TODO: Should this be an optional argument to this function?
             include_variable_in_set_constraints=false,
@@ -109,8 +109,8 @@ Each variable appears at most one time in the returned vector.
 
 """
 function identify_unique_variables(
-    constraint::jmp.ConstraintRef,
-)::Vector{jmp.VariableRef}
+    constraint::JuMP.ConstraintRef,
+)::Vector{JuMP.VariableRef}
     return identify_unique_variables(constraint, constraint.index)
 end
 
@@ -129,13 +129,13 @@ constraint or a nonlinear constraint.
 
 """
 function identify_unique_variables(
-    constraint::jmp.ConstraintRef,
-    index::moi.ConstraintIndex,
-)::Vector{jmp.VariableRef}
+    constraint::JuMP.ConstraintRef,
+    index::MOI.ConstraintIndex,
+)::Vector{JuMP.VariableRef}
     model = constraint.model
-    fcn = moi.get(model, moi.ConstraintFunction(), constraint)
+    fcn = MOI.get(model, MOI.ConstraintFunction(), constraint)
     varidxs = identify_unique_variables(fcn)
-    varrefs = [jmp.VariableRef(model, idx) for idx in varidxs]
+    varrefs = [JuMP.VariableRef(model, idx) for idx in varidxs]
     return varrefs
 end
 
@@ -154,9 +154,9 @@ constraint or a nonlinear constraint.
 
 """
 function identify_unique_variables(
-    constraint::jmp.ConstraintRef,
-    index::moi.Nonlinear.ConstraintIndex,
-)::Vector{jmp.VariableRef}
+    constraint::JuMP.ConstraintRef,
+    index::MOI.Nonlinear.ConstraintIndex,
+)::Vector{JuMP.VariableRef}
     model = constraint.model
     nlmod = model.nlp_model
     nlcons = nlmod.constraints
@@ -167,11 +167,11 @@ function identify_unique_variables(
     # This could be its own function, but I inlined it here to allow a more
     # useful error message if we ever encounter NODE_VARIABLE.
     # Will be moved when/if the need arises.
-    variables = Vector{moi.VariableIndex}()
+    variables = Vector{MOI.VariableIndex}()
     for node in expr.nodes
-        if node.type == moi.Nonlinear.NODE_MOI_VARIABLE
-            push!(variables, moi.VariableIndex(node.index))
-        elseif node.type == moi.Nonlinear.NODE_VARIABLE
+        if node.type == MOI.Nonlinear.NODE_MOI_VARIABLE
+            push!(variables, MOI.VariableIndex(node.index))
+        elseif node.type == MOI.Nonlinear.NODE_VARIABLE
             # I do not know under what situation this could occur, but
             # am throwing this error to be defensive.
             throw(DomainError(
@@ -185,7 +185,7 @@ function identify_unique_variables(
     end
 
     # Return VariableRefs
-    refs = [jmp.VariableRef(model, idx) for idx in variables]
+    refs = [JuMP.VariableRef(model, idx) for idx in variables]
     return _filter_duplicates(refs)
 end
 
@@ -204,9 +204,9 @@ function should be implemented.
 
 """
 function identify_unique_variables(
-    fcn::Union{moi.ScalarQuadraticFunction, moi.ScalarAffineFunction},
-)::Vector{moi.VariableIndex}
-    variables = Vector{moi.VariableIndex}()
+    fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
+)::Vector{MOI.VariableIndex}
+    variables = Vector{MOI.VariableIndex}()
     for terms in _get_variable_terms(fcn)
         for term in terms
             for var in identify_unique_variables(term)
@@ -219,10 +219,10 @@ end
 
 function identify_unique_variables(
     fcn::T
-)::Vector{moi.VariableIndex} where {T<:moi.AbstractVectorFunction}
+)::Vector{MOI.VariableIndex} where {T<:MOI.AbstractVectorFunction}
     throw(TypeError(
         fcn,
-        Union{moi.ScalarQuadraticFunction, moi.ScalarAffineFunction},
+        Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
         typeof(fcn),
     ))
 end
@@ -238,11 +238,11 @@ Currently implemented only for `ScalarQuadraticFunction` and
 `ScalarAffineFunction`.
 
 """
-function _get_variable_terms(fcn::moi.ScalarQuadraticFunction)
+function _get_variable_terms(fcn::MOI.ScalarQuadraticFunction)
     return (fcn.quadratic_terms, fcn.affine_terms)
 end
 
-function _get_variable_terms(fcn::moi.ScalarAffineFunction)
+function _get_variable_terms(fcn::MOI.ScalarAffineFunction)
     return (fcn.terms,)
 end
 
@@ -260,14 +260,14 @@ Currently implemented only for `ScalarAffineTerm` and `ScalarQuadraticTerm`.
 
 """
 function identify_unique_variables(
-    term::moi.ScalarAffineTerm,
-)::Vector{moi.VariableIndex}
+    term::MOI.ScalarAffineTerm,
+)::Vector{MOI.VariableIndex}
     return [term.variable]
 end
 
 function identify_unique_variables(
-    term::moi.ScalarQuadraticTerm,
-)::Vector{moi.VariableIndex}
+    term::MOI.ScalarQuadraticTerm,
+)::Vector{MOI.VariableIndex}
     # Note that this compares indices only. If somehow these indices refer to
     # different models, this could be incorrect.
     if term.variable_1 === term.variable_2
@@ -285,12 +285,12 @@ Return a vector of variables of indices that does not contain duplicates.
 
 """
 function _filter_duplicates(
-    indices::Vector{moi.VariableIndex},
-)::Vector{moi.VariableIndex}
+    indices::Vector{MOI.VariableIndex},
+)::Vector{MOI.VariableIndex}
     # Note that by hashing only the variable index, we implicitly assume that
     # all variables come from the same model. I believe this is safe.
-    seen = Set{moi.VariableIndex}()
-    filtered = Vector{moi.VariableIndex}()
+    seen = Set{MOI.VariableIndex}()
+    filtered = Vector{MOI.VariableIndex}()
     for idx in indices
         if !(idx in seen)
             push!(seen, idx)
@@ -302,12 +302,12 @@ end
 
 
 function _filter_duplicates(
-    variables::Vector{jmp.VariableRef},
-)::Vector{jmp.VariableRef}
+    variables::Vector{JuMP.VariableRef},
+)::Vector{JuMP.VariableRef}
     # What happens when VariableRef gets hashed? I.e. how is the
     # hash of the model computed?
-    seen = Set{jmp.VariableRef}()
-    filtered = Vector{jmp.VariableRef}()
+    seen = Set{JuMP.VariableRef}()
+    filtered = Vector{JuMP.VariableRef}()
     for var in variables
         if !(var in seen)
             push!(seen, var)

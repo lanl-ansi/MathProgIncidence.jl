@@ -22,7 +22,7 @@ A JuMP interface to the algorithms implemented by JuMPIn
 
 """
 
-import JuMP as jmp
+import JuMP
 
 import JuMPIn: get_bipartite_incidence_graph, maximum_matching
 
@@ -111,7 +111,7 @@ IncidenceGraphInterface(
 
 
 IncidenceGraphInterface(
-    m::jmp.Model;
+    m::JuMP.Model;
     include_inequality::Bool = false,
 ) = IncidenceGraphInterface(
     get_bipartite_incidence_graph(m, include_inequality = include_inequality)
@@ -119,8 +119,8 @@ IncidenceGraphInterface(
 
 
 IncidenceGraphInterface(
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
+    constraints::Vector{JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
 ) = IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)
 )
@@ -137,7 +137,7 @@ Return the variables adjacent to a constraint in an incidence graph.
 """
 function get_adjacent(
     igraph::IncidenceGraphInterface,
-    constraint::jmp.ConstraintRef,
+    constraint::JuMP.ConstraintRef,
 )
     con_node = igraph._con_node_map[constraint]
     var_nodes = gjl.neighbors(igraph._graph, con_node)
@@ -173,7 +173,7 @@ julia> display(adj_cons)
 """
 function get_adjacent(
     igraph::IncidenceGraphInterface,
-    variable::jmp.VariableRef,
+    variable::JuMP.VariableRef,
 )
     var_node = igraph._var_node_map[variable]
     con_nodes = gjl.neighbors(igraph._graph, var_node)
@@ -208,7 +208,7 @@ Dict{ConstraintRef{Model, C, ScalarShape} where C, VariableRef} with 2 entries:
 """
 function maximum_matching(
     igraph::IncidenceGraphInterface
-)::Dict{jmp.ConstraintRef, jmp.VariableRef}
+)::Dict{JuMP.ConstraintRef, JuMP.VariableRef}
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon) # Relying on graph convention here.
@@ -220,9 +220,9 @@ end
 
 
 function maximum_matching(
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
-)::Dict{jmp.ConstraintRef, jmp.VariableRef}
+    constraints::Vector{JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
+)::Dict{JuMP.ConstraintRef, JuMP.VariableRef}
     igraph = IncidenceGraphInterface(constraints, variables)
     return maximum_matching(igraph)
 end
@@ -332,8 +332,8 @@ end
 
 
 function dulmage_mendelsohn(
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
+    constraints::Vector{JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
 )
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
