@@ -17,8 +17,6 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module MaximumMatching
-
 import Graphs as gjl
 import BipartiteMatching as bpm
 
@@ -62,6 +60,4 @@ function maximum_matching(graph::gjl.Graph, set1::Set)
     # Translate row/column coordinates back into nodes of the graph
     graph_matching = Dict(nodes1[r] => nodes2[c] for (r, c) in matching)
     return graph_matching
-end
-
 end

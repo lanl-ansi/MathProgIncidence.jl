@@ -1,10 +1,9 @@
-# IncidenceGraph
+# Incidence graph
 
 ```@meta
 CurrentModule = JuMPIn
 ```
 
 ```@docs
-IncidenceGraph
-IncidenceGraph.get_bipartite_incidence_graph
+get_bipartite_incidence_graph
 ```

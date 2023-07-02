@@ -1,12 +1,11 @@
-# GetEquality
+# Identifying equality constraints
 
 ```@meta
 CurrentModule = JuMPIn
 ```
 
 ```@docs
-GetEquality
-GetEquality.get_equality_constraints
-GetEquality.is_equality
-GetEquality.set_implies_equality
+get_equality_constraints
+is_equality
+set_implies_equality
 ```

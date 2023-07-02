@@ -22,16 +22,10 @@ Utility functions for getting the incidence graph of JuMP constraints and
 variables.
 
 """
-module IncidenceGraph
 
-import JuMP as jmp
-import MathOptInterface as moi
+import JuMP
 
-include("get_equality.jl")
-using .GetEquality: get_equality_constraints
-
-include("identify_variables.jl")
-using .IdentifyVariables: identify_unique_variables
+import JuMPIn: get_equality_constraints, identify_unique_variables
 
 """
     get_bipartite_incidence_graph(model, include_inequality = false)
@@ -52,8 +46,6 @@ This function returns a tuple `(graph, con_node_map, var_node_map)`
 
 The constraints in the graph are all the (by default, equality) constraints in
 the model, and the variables are those that participate in these constraints.
-
-This function can also be accessed via the `JuMPIn` module.
 
 # Example
 ```julia-repl
@@ -91,11 +83,11 @@ regardless of which variables participate in the constraints.
 
 """
 function get_bipartite_incidence_graph(
-    model::jmp.Model;
+    model::JuMP.Model;
     include_inequality::Bool = false,
 )
     if include_inequality
-        constraints = jmp.all_constraints(
+        constraints = JuMP.all_constraints(
             model,
             # TODO: Should this be an optional argument to this function?
             include_variable_in_set_constraints=false,
@@ -110,7 +102,7 @@ function get_bipartite_incidence_graph(
     return get_bipartite_incidence_graph(constraints)
 end
 
-function get_bipartite_incidence_graph(constraints::Vector{jmp.ConstraintRef})
+function get_bipartite_incidence_graph(constraints::Vector{JuMP.ConstraintRef})
     variables = identify_unique_variables(constraints)
     # We could build up a variable-index map dynamically to get the incidence
     # in a single loop over the constraints, but this is easier to implement.
@@ -118,8 +110,8 @@ function get_bipartite_incidence_graph(constraints::Vector{jmp.ConstraintRef})
 end
 
 function get_bipartite_incidence_graph(
-    constraints::Vector{jmp.ConstraintRef},
-    variables::Vector{jmp.VariableRef},
+    constraints::Vector{JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
 )
     ncon = length(constraints)
     nvar = length(variables)
@@ -128,8 +120,8 @@ function get_bipartite_incidence_graph(
     con_nodes = Vector(1:ncon)
     var_nodes = Vector(ncon+1:ncon+nvar)
 
-    con_node_map = Dict{jmp.ConstraintRef, Int64}(zip(constraints, con_nodes))
-    var_node_map = Dict{jmp.VariableRef, Int64}(zip(variables, var_nodes))
+    con_node_map = Dict{JuMP.ConstraintRef, Int64}(zip(constraints, con_nodes))
+    var_node_map = Dict{JuMP.VariableRef, Int64}(zip(variables, var_nodes))
 
     # This could be violated if a variable or constraint appears multiple times.
     # TODO: Fail more gracefully if this happens.
@@ -152,5 +144,3 @@ function get_bipartite_incidence_graph(
     # have ordered vectors of constraints and variables.
     return graph, con_node_map, var_node_map
 end
-
-end # module IncidenceGraph
