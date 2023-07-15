@@ -20,7 +20,7 @@
 module TestInterface
 
 using Test: @test, @test_throws
-import JuMP as jmp
+import JuMP
 import JuMPIn as ji
 
 # Note: Do not import from IncidenceGraphInterface here; this will
@@ -80,7 +80,7 @@ end
 
 function test_construct_interface_rectangular()
     m = make_degenerate_flow_model()
-    @jmp.constraint(
+    @JuMP.constraint(
         m,
         sum_flow_eqn,
         m[:flow] == sum(m[:flow_comp][:]),
@@ -165,8 +165,8 @@ function test_maximum_matching()
     matching = ji.maximum_matching(igraph)
     @test length(matching) == 7
     for (con, var) in matching
-        @test typeof(con) <: jmp.ConstraintRef
-        @test typeof(var) <: jmp.VariableRef
+        @test typeof(con) <: JuMP.ConstraintRef
+        @test typeof(var) <: JuMP.VariableRef
         @test var in Set(ji.get_adjacent(igraph, con))
         @test con in Set(ji.get_adjacent(igraph, var))
     end
