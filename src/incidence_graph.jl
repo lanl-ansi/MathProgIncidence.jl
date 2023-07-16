@@ -95,6 +95,14 @@ function get_bipartite_incidence_graph(
     include_inequality::Bool = false,
 )
     if include_inequality
+        # Note that this may generate some constraints that are incompatible
+        # with downstream function calls (e.g. constraints involving vector
+        # expressions).
+        #
+        # This is also repeated in identify_unique_variables(Model).
+        # Identifying all constraints (including inequalities, but probably
+        # not including VectorFunction constraints) may be something we want
+        # to standardize at some point. E.g. a get_scalar_constraints function.
         constraints = jmp.all_constraints(
             model,
             # TODO: Should this be an optional argument to this function?
