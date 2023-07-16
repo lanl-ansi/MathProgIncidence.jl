@@ -179,6 +179,16 @@ function test_model_bad_constr_no_ineq()
     )
 end
 
+function test_fixing_constraint()
+    m = jmp.Model()
+    @jmp.variable(m, x[1:2])
+    jmp.fix(x[1], 1)
+    fixing_con = jmp.FixRef(x[1])
+    variables = identify_unique_variables(fixing_con)
+    @test length(variables) == 1
+    @test variables[1] === x[1]
+end
+
 function runtests()
     test_linear()
     test_quadratic()
@@ -191,6 +201,7 @@ function runtests()
     test_model_bad_constr()
     test_model_bad_constr_no_ineq()
     test_function_with_variable_squared()
+    test_fixing_constraint()
     return
 end
 

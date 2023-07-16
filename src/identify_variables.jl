@@ -86,6 +86,8 @@ Each variable appears at most one time in the returned vector.
 function identify_unique_variables(
     model::jmp.Model; include_inequality::Bool=false,
 )::Vector{jmp.VariableRef}
+    # Note that this method exists mostly for convenience, and is not used
+    # by any of the "upstream" methods, e.g. get_bipartite_incidence_graph
     if include_inequality
         # Note that this may include some constraints which are not compatible
         # with downstream function calls (e.g. constraints where the function
@@ -228,6 +230,12 @@ function identify_unique_variables(
         Union{moi.ScalarQuadraticFunction, moi.ScalarAffineFunction},
         typeof(fcn),
     ))
+end
+
+function identify_unique_variables(
+    var::moi.VariableIndex
+)::Vector{moi.VariableIndex}
+    return [var]
 end
 
 
