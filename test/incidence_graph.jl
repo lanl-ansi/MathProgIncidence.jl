@@ -93,9 +93,25 @@ function test_get_incidence_graph_badconstraint()
     return
 end
 
+function test_include_bound_as_inequality()
+    m = jmp.Model()
+    @jmp.variable(m, 0 <= x[1:2])
+    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    graph, con_node_map, var_node_map = get_bipartite_incidence_graph(
+        m, include_inequality = true
+    )
+    A, B, E = graph
+    @test length(A) == 3
+    @test length(B) == 2
+    @test length(E) == 4
+    pred_con_set = Set([eq1, jmp.LowerBoundRef(x[1]), jmp.LowerBoundRef(x[2])])
+    @test pred_con_set == keys(con_node_map)
+end
+
 function runtests()
     test_get_incidence_graph()
     test_get_incidence_graph_badconstraint()
+    test_include_bound_as_inequality()
     return
 end
 
