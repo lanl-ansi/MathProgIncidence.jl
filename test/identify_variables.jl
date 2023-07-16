@@ -189,6 +189,16 @@ function test_fixing_constraint()
     @test variables[1] === x[1]
 end
 
+function test_inequality_with_bounds()
+    m = jmp.Model()
+    @jmp.variable(m, x[1:2])
+    @jmp.variable(m, 0 <= y[1:2])
+    @jmp.constraint(m, x[1] + 2*x[2]^2 == 1)
+    variables = identify_unique_variables(m, include_inequality = true)
+    pred_var_set = Set([x[1], x[2], y[1], y[2]])
+    @test Set(variables) == pred_var_set
+end
+
 function runtests()
     test_linear()
     test_quadratic()
@@ -202,6 +212,7 @@ function runtests()
     test_model_bad_constr_no_ineq()
     test_function_with_variable_squared()
     test_fixing_constraint()
+    test_inequality_with_bounds()
     return
 end
 

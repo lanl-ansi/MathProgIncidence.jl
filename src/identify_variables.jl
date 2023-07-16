@@ -92,8 +92,7 @@ function identify_unique_variables(
         # rather than silently ignoring these constraints.
         constraints = JuMP.all_constraints(
             model,
-            # TODO: Should this be an optional argument to this function?
-            include_variable_in_set_constraints=false,
+            include_variable_in_set_constraints=true,
         )   
     else
         constraints = get_equality_constraints(model)
