@@ -51,6 +51,9 @@ end
 function test_with_fixed_variables()
     m = JuMP.Model()
     @JuMP.variable(m, x[1:2])
+    # These bound constraints are picked up, then discarded as the
+    # one-sided interval sets never "imply equality"
+    @JuMP.variable(m, 0 <= y <= 1)
     JuMP.fix(x[1], 1.0)
     eq_cons = get_equality_constraints(m)
     @test length(eq_cons) == 1
