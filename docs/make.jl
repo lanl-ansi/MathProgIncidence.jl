@@ -35,3 +35,5 @@ makedocs(
         ],
     ],
 )
+
+deploydocs(repo = "github.com/lanl-ansi/JuMPIn.jl.git")
