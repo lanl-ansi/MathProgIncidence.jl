@@ -225,6 +225,19 @@ function test_dulmage_mendelsohn()
     return nothing
 end
 
+function test_overconstrained_due_to_fixed_variable()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    @JuMP.constraint(m, x[1] + 2*x[2] == 1)
+    @JuMP.constraint(m, 3*x[2] - x[2] == 0)
+    JuMP.fix(x[1], 3)
+    igraph = ji.IncidenceGraphInterface(m)
+    con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+    @test length(var_dmp.overconstrained) == 2
+    @test length(con_dmp.overconstrained) == 2
+    @test length(con_dmp.unmatched) == 1
+end
+
 function runtests()
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -234,6 +247,7 @@ function runtests()
     test_get_adjacent_to_variable()
     test_maximum_matching()
     test_dulmage_mendelsohn()
+    test_overconstrained_due_to_fixed_variable()
 end
 
 end
