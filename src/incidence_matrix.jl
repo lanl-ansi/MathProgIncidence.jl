@@ -38,7 +38,7 @@ between the provided constraints and variables.
 Rows correspond to constraints and columns correspond to varibales.
 """
 function incidence_matrix(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 )::SparseArrays.SparseMatrixCSC
     graph, con_node_map, var_node_map = get_bipartite_incidence_graph(

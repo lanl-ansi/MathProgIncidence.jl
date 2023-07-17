@@ -119,7 +119,7 @@ IncidenceGraphInterface(
 
 
 IncidenceGraphInterface(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 ) = IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)

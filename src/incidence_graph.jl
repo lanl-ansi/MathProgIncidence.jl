@@ -117,7 +117,7 @@ function get_bipartite_incidence_graph(constraints::Vector{JuMP.ConstraintRef})
 end
 
 function get_bipartite_incidence_graph(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 )
     ncon = length(constraints)
