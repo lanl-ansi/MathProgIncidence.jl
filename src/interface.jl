@@ -24,7 +24,7 @@ A JuMP interface to the algorithms implemented by JuMPIn
 
 import JuMP
 
-import JuMPIn: get_bipartite_incidence_graph, maximum_matching
+import JuMPIn: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
 import Graphs as gjl
 import BipartiteMatching as bpm
@@ -101,7 +101,7 @@ end
 
 
 IncidenceGraphInterface(
-    args::Tuple{Tuple, Dict, Dict}
+    args::GraphDataTuple
 ) = IncidenceGraphInterface(
     _tuple_to_graphs_jl(args[1]),
     args[2],
@@ -119,7 +119,7 @@ IncidenceGraphInterface(
 
 
 IncidenceGraphInterface(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 ) = IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)
@@ -138,7 +138,7 @@ Return the variables adjacent to a constraint in an incidence graph.
 function get_adjacent(
     igraph::IncidenceGraphInterface,
     constraint::JuMP.ConstraintRef,
-)
+)::Vector{JuMP.VariableRef}
     con_node = igraph._con_node_map[constraint]
     var_nodes = gjl.neighbors(igraph._graph, con_node)
     variables = [igraph._nodes[n] for n in var_nodes]
@@ -165,7 +165,7 @@ julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
 julia> igraph = ji.IncidenceGraphInterface(m);
 julia> adj_cons = ji.get_adjacent(igraph, v[1]);
 julia> display(adj_cons)
-2-element Vector{ConstraintRef{Model, C, ScalarShape} where C}:
+2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
 ```
@@ -174,7 +174,7 @@ julia> display(adj_cons)
 function get_adjacent(
     igraph::IncidenceGraphInterface,
     variable::JuMP.VariableRef,
-)
+)::Vector{JuMP.ConstraintRef}
     var_node = igraph._var_node_map[variable]
     con_nodes = gjl.neighbors(igraph._graph, var_node)
     constraints = [igraph._nodes[n] for n in con_nodes]
@@ -200,7 +200,7 @@ julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
 julia> igraph = ji.IncidenceGraphInterface(m);
 julia> matching = ji.maximum_matching(igraph);
 julia> display(matching)
-Dict{ConstraintRef{Model, C, ScalarShape} where C, VariableRef} with 2 entries:
+Dict{ConstraintRef, VariableRef} with 2 entries:
   v[1] * v[2] ^ 3.0 - 2.0 = 0 => v[2]
   eq_1 : v[1] + v[3] = 1.0 => v[1]
 ```
@@ -220,13 +220,32 @@ end
 
 
 function maximum_matching(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 )::Dict{JuMP.ConstraintRef, JuMP.VariableRef}
     igraph = IncidenceGraphInterface(constraints, variables)
     return maximum_matching(igraph)
 end
 
+const DMConPartition = NamedTuple{
+    (:underconstrained, :square, :overconstrained, :unmatched),
+    Tuple{
+        Vector{JuMP.ConstraintRef},
+        Vector{JuMP.ConstraintRef},
+        Vector{JuMP.ConstraintRef},
+        Vector{JuMP.ConstraintRef},
+    },
+}
+
+const DMVarPartition = NamedTuple{
+    (:unmatched, :underconstrained, :square, :overconstrained),
+    Tuple{
+        Vector{JuMP.VariableRef},
+        Vector{JuMP.VariableRef},
+        Vector{JuMP.VariableRef},
+        Vector{JuMP.VariableRef},
+    },
+}
 
 """
     dulmage_mendelsohn(igraph::IncidenceGraphInterface)
@@ -294,21 +313,23 @@ julia> display(var_dmp.underconstrained)
  v[1]
  v[2]
 julia> display(con_dmp.underconstrained)
-2-element Vector{ConstraintRef{Model, C, ScalarShape} where C}:
+2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
 julia> display(var_dmp.square)
 1-element Vector{VariableRef}:
  v[4]
 julia> display(con_dmp.square)
-1-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarQuadraticFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape}}:
+1-element Vector{ConstraintRef}:
  eq_3 : v[4]² = 3.0
 julia> # As there are no unmatched constraints, the overconstrained subsystem
 julia> # is empty.
 ```
 
 """
-function dulmage_mendelsohn(igraph::IncidenceGraphInterface)
+function dulmage_mendelsohn(
+    igraph::IncidenceGraphInterface
+)::Tuple{DMConPartition, DMVarPartition}
     ncon = length(igraph._con_node_map)
     con_node_set = Set(1:ncon)
     con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
@@ -332,9 +353,9 @@ end
 
 
 function dulmage_mendelsohn(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)
+)::Tuple{DMConPartition, DMVarPartition}
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end

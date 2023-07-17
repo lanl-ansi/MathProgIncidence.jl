@@ -236,6 +236,7 @@ function test_overconstrained_due_to_fixed_variable()
     @test length(var_dmp.overconstrained) == 2
     @test length(con_dmp.overconstrained) == 2
     @test length(con_dmp.unmatched) == 1
+    return
 end
 
 function test_overconstrained_due_to_including_bound()
@@ -249,6 +250,52 @@ function test_overconstrained_due_to_including_bound()
     @test length(var_dmp.overconstrained) == 2
     @test length(con_dmp.overconstrained) == 2
     @test length(con_dmp.unmatched) == 1
+    return
+end
+
+function test_interface_from_constraints_and_variables()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1,  x[1] + x[2] == 2)
+    @JuMP.constraint(m, eq2, x[3]*x[2] == 1.1)
+    constraints = [eq1, eq2]
+    variables = [x[1], x[3]]
+    igraph = ji.IncidenceGraphInterface(constraints, variables)
+    _test_igraph_fields(igraph, constraints, variables)
+    return
+end
+
+function test_matching_from_constraints_and_variables()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1,  x[1] + x[2] == 2)
+    @JuMP.constraint(m, eq2, x[3]*x[2] == 1.1)
+    constraints = [eq1, eq2]
+    variables = [x[1], x[3]]
+    matching = ji.maximum_matching(constraints, variables)
+    @test length(matching) == 2
+    @test matching[eq1] == x[1]
+    @test matching[eq2] == x[3]
+    return
+end
+
+function test_dulmage_mendelsohn_from_constraints_and_variables()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1,  x[1] + x[2] == 2)
+    @JuMP.constraint(m, eq2, x[3]*x[2] == 1.1)
+    constraints = [eq1, eq2]
+    variables = [x[1], x[3]]
+    con_dmp, var_dmp = ji.dulmage_mendelsohn(constraints, variables)
+    @test con_dmp.unmatched == []
+    @test con_dmp.underconstrained == []
+    @test con_dmp.overconstrained == []
+    @test Set(con_dmp.square) == Set(constraints)
+    @test var_dmp.unmatched == []
+    @test var_dmp.underconstrained == []
+    @test var_dmp.overconstrained == []
+    @test Set(var_dmp.square) == Set(variables)
+    return
 end
 
 function runtests()
@@ -262,6 +309,9 @@ function runtests()
     test_dulmage_mendelsohn()
     test_overconstrained_due_to_fixed_variable()
     test_overconstrained_due_to_including_bound()
+    test_interface_from_constraints_and_variables()
+    test_matching_from_constraints_and_variables()
+    test_dulmage_mendelsohn_from_constraints_and_variables()
 end
 
 end
