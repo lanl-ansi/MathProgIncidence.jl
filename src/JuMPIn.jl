@@ -33,4 +33,8 @@ include("maximum_matching.jl")
 include("dulmage_mendelsohn.jl")
 include("interface.jl")
 
+# Methods to get incidence matrices (as SparseMatrixCSC) from
+# JuMP models or incidence graphs
+include("incidence_matrix.jl")
+
 end
