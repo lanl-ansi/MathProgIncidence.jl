@@ -154,7 +154,7 @@ julia> display(eq_cons)
 function get_equality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
     constraints = JuMP.all_constraints(
         model,
-        include_variable_in_set_constraints=false,
+        include_variable_in_set_constraints=true,
     )
     return get_equality_constraints(constraints)
 end

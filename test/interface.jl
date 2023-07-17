@@ -20,7 +20,7 @@
 module TestInterface
 
 using Test: @test, @test_throws
-import JuMP as jmp
+import JuMP
 import JuMPIn as ji
 
 # Note: Do not import from IncidenceGraphInterface here; this will
@@ -80,7 +80,7 @@ end
 
 function test_construct_interface_rectangular()
     m = make_degenerate_flow_model()
-    @jmp.constraint(
+    @JuMP.constraint(
         m,
         sum_flow_eqn,
         m[:flow] == sum(m[:flow_comp][:]),
@@ -165,8 +165,8 @@ function test_maximum_matching()
     matching = ji.maximum_matching(igraph)
     @test length(matching) == 7
     for (con, var) in matching
-        @test typeof(con) <: jmp.ConstraintRef
-        @test typeof(var) <: jmp.VariableRef
+        @test typeof(con) <: JuMP.ConstraintRef
+        @test typeof(var) <: JuMP.VariableRef
         @test var in Set(ji.get_adjacent(igraph, con))
         @test con in Set(ji.get_adjacent(igraph, var))
     end
@@ -225,6 +225,32 @@ function test_dulmage_mendelsohn()
     return nothing
 end
 
+function test_overconstrained_due_to_fixed_variable()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    @JuMP.constraint(m, x[1] + 2*x[2] == 1)
+    @JuMP.constraint(m, 3*x[2] - x[2] == 0)
+    JuMP.fix(x[1], 3)
+    igraph = ji.IncidenceGraphInterface(m)
+    con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+    @test length(var_dmp.overconstrained) == 2
+    @test length(con_dmp.overconstrained) == 2
+    @test length(con_dmp.unmatched) == 1
+end
+
+function test_overconstrained_due_to_including_bound()
+    m = JuMP.Model()
+    @JuMP.variable(m, x)
+    @JuMP.variable(m, 0.01 <= y)
+    @JuMP.constraint(m, 2*x + y == 1)
+    @JuMP.NLconstraint(m, x == sqrt(y))
+    igraph = ji.IncidenceGraphInterface(m, include_inequality = true)
+    con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+    @test length(var_dmp.overconstrained) == 2
+    @test length(con_dmp.overconstrained) == 2
+    @test length(con_dmp.unmatched) == 1
+end
+
 function runtests()
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -234,6 +260,8 @@ function runtests()
     test_get_adjacent_to_variable()
     test_maximum_matching()
     test_dulmage_mendelsohn()
+    test_overconstrained_due_to_fixed_variable()
+    test_overconstrained_due_to_including_bound()
 end
 
 end
