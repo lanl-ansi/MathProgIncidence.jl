@@ -27,6 +27,15 @@ import JuMP
 
 import JuMPIn: get_equality_constraints, identify_unique_variables
 
+const GraphDataTuple = Tuple{
+    # (A, B, E) describing the bipartite graph
+    Tuple{Vector{Int}, Vector{Int}, Vector{Tuple{Int, Int}}},
+    # Map from constraints to nodes (in A)
+    Dict{JuMP.ConstraintRef, Int},
+    # Map from variables to nodes (in B)
+    Dict{JuMP.VariableRef, Int},
+}
+
 """
     get_bipartite_incidence_graph(model, include_inequality = false)
 
@@ -85,7 +94,7 @@ regardless of which variables participate in the constraints.
 function get_bipartite_incidence_graph(
     model::JuMP.Model;
     include_inequality::Bool = false,
-)
+)::GraphDataTuple
     if include_inequality
         # Note that this may generate some constraints that are incompatible
         # with downstream function calls (e.g. constraints involving vector
@@ -109,7 +118,9 @@ function get_bipartite_incidence_graph(
     return get_bipartite_incidence_graph(constraints)
 end
 
-function get_bipartite_incidence_graph(constraints::Vector{JuMP.ConstraintRef})
+function get_bipartite_incidence_graph(
+    constraints::Vector{<:JuMP.ConstraintRef}
+)::GraphDataTuple
     variables = identify_unique_variables(constraints)
     # We could build up a variable-index map dynamically to get the incidence
     # in a single loop over the constraints, but this is easier to implement.
@@ -117,9 +128,9 @@ function get_bipartite_incidence_graph(constraints::Vector{JuMP.ConstraintRef})
 end
 
 function get_bipartite_incidence_graph(
-    constraints::Vector{JuMP.ConstraintRef},
+    constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)
+)::GraphDataTuple
     ncon = length(constraints)
     nvar = length(variables)
     # Note the convention we apply: Constraints take the first 1:ncon
