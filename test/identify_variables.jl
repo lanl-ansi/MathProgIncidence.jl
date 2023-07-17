@@ -199,6 +199,17 @@ function test_inequality_with_bounds()
     @test Set(variables) == pred_var_set
 end
 
+function test_two_constraints_same_type()
+    m = jmp.Model()
+    @jmp.variable(m, x[1:3])
+    @jmp.constraint(m, eq1, x[1] + x[2] == 2)
+    @jmp.constraint(m, eq2, x[2] + 2*x[3] == 3)
+    cons = [eq1, eq2]
+    vars = identify_unique_variables(cons)
+    pred_var_set = Set([x[1], x[2], x[3]])
+    @test Set(vars) == pred_var_set
+end
+
 function runtests()
     test_linear()
     test_quadratic()
@@ -213,6 +224,7 @@ function runtests()
     test_function_with_variable_squared()
     test_fixing_constraint()
     test_inequality_with_bounds()
+    test_two_constraints_same_type()
     return
 end
 

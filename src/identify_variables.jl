@@ -61,8 +61,7 @@ julia> display(vars)
 
 """
 function identify_unique_variables(
-    constraints::Vector,
-    # FIXME: Couldn't get this working with Vector{ConstraintRef}...
+    constraints::Vector{<:JuMP.ConstraintRef},
 )::Vector{JuMP.VariableRef}
     variables = Vector{JuMP.VariableRef}()
     for con in constraints
