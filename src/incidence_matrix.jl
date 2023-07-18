@@ -41,21 +41,16 @@ function incidence_matrix(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 )::SparseArrays.SparseMatrixCSC
-    graph, con_node_map, var_node_map = get_bipartite_incidence_graph(
-        constraints, variables
-    )
+    graph, _, _ = get_bipartite_incidence_graph(constraints, variables)
     A, B, E = graph
     M = length(constraints)
-    N = length(variables)
-    con_row_map = Dict(zip(constraints, 1:M))
-    var_col_map = Dict(zip(variables, 1:N))
-
     row = Vector{Int64}()
     col = Vector{Int64}()
     val = Vector{Float64}()
     for (i, j) in E
+        # NOTE: Here we exploit the graph's convention. This will need to
+        # change if we change how the graph is constructed.
         push!(row, i)
-        # TODO: How did I know that I need to subtract M from j
         push!(col, j - M)
         push!(val, 1.0)
     end
@@ -69,7 +64,6 @@ function incidence_matrix(
     col = Vector{Int64}()
     val = Vector{Float64}()
     M = length(igraph._con_node_map)
-    N = length(igraph._var_node_map)
     for e in Graphs.edges(igraph._graph)
         i = Graphs.src(e)
         j = Graphs.dst(e)
@@ -78,8 +72,9 @@ function incidence_matrix(
         end
         # Now we know that j is a variable node
         push!(row, i)
-        # TODO: How do we know that we subtract M from
-        # variable nodes?
+        # NOTE: Here we exploit the graph's convention. This will need to
+        # change if we change how the graph is constructed, e.g. we add
+        # a node for the objective.
         push!(col, j - M)
         push!(val, 1.0)
     end
