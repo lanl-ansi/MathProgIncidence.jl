@@ -70,9 +70,9 @@ function incidence_matrix(
     val = Vector{Float64}()
     M = length(igraph._con_node_map)
     N = length(igraph._var_node_map)
-    for e in edges(igraph._graph)
-        i = src(e)
-        j = dst(e)
+    for e in Graphs.edges(igraph._graph)
+        i = Graphs.src(e)
+        j = Graphs.dst(e)
         if typeof(igraph._nodes[i]) <: JuMP.VariableRef
             i, j = j, i
         end
