@@ -32,6 +32,7 @@ makedocs(
             "reference/identify_variables.md",
             "reference/incidence_graph.md",
             "reference/interface.md",
+            "reference/incidence_matrix.md",
         ],
     ],
 )
