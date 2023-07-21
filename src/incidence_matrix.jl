@@ -30,12 +30,15 @@ import Graphs
 import JuMPIn: get_bipartite_incidence_graph, IncidenceGraphInterface
 
 """
-    incidence_matrix
+    incidence_matrix(constraints, variables)::SparseMatrixCSC
 
 Return a `SparseMatrixCSC` with entries corresponding to incidence
 between the provided constraints and variables.
 
-Rows correspond to constraints and columns correspond to varibales.
+Rows correspond to constraints, columns correspond to variables, and
+matrix entries correspond to edges in the incidence graph. All matrix
+entries have values of `1.0`.
+
 """
 function incidence_matrix(
     constraints::Vector{<:JuMP.ConstraintRef},
@@ -57,6 +60,13 @@ function incidence_matrix(
     return SparseArrays.sparse(row, col, val)
 end
 
+"""
+    incidence_matrix(igraph::IncidenceGraphInterface)::SparseMatrixCSC
+
+Return the incidence matrix associated with the provided
+`IncidenceGraphInterface`.
+
+"""
 function incidence_matrix(
     igraph::IncidenceGraphInterface
 )::SparseArrays.SparseMatrixCSC
