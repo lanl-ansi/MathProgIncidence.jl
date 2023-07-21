@@ -21,30 +21,9 @@ using JuMPIn
 using Test
 
 @testset "JuMPIn.jl" begin
-
-    @testset "IdentifyVariables" begin
-        include("identify_variables.jl")
-        TestIdentifyVariables.runtests()
-    end
-
-    @testset "GetEquality" begin
-        include("get_equality.jl")
-        TestGetEquality.runtests()
-    end
-
-    @testset "IncidenceGraph" begin
-        include("incidence_graph.jl")
-        TestIncidenceGraph.runtests()
-    end
-
-    @testset "Interface" begin
-        include("interface.jl")
-        TestInterface.runtests()
-    end
-
-    @testset "IncidenceMatrix" begin
-        include("incidence_matrix.jl")
-        TestIncidenceMatrix.runtests()
-    end
-
+    include("identify_variables.jl")
+    include("get_equality.jl")
+    include("incidence_graph.jl")
+    include("interface.jl")
+    include("incidence_matrix.jl")
 end

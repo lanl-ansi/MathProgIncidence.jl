@@ -17,16 +17,13 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module TestIdentifyVariables
-import JuMP as jmp
-import MathOptInterface as moi
+import JuMP
+import MathOptInterface as MOI
 using Test: @testset, @test, @test_throws
 using JuMPIn: identify_unique_variables
 
 # Local import of JuMP models for testing
-include("models.jl")
-using .Models: make_degenerate_flow_model
-
+include("models.jl") # make_degenerate_flow_model
 
 function test_linear()
     m = make_degenerate_flow_model()
@@ -55,9 +52,9 @@ function test_nonlinear()
 end
 
 function test_nonlinear_with_potential_duplicates()
-    m = jmp.Model()
-    @jmp.variable(m, var[1:2])
-    @jmp.NLconstraint(m, con, var[1]^3 + var[1]*var[2] == 1.0)
+    m = JuMP.Model()
+    @JuMP.variable(m, var[1:2])
+    @JuMP.NLconstraint(m, con, var[1]^3 + var[1]*var[2] == 1.0)
     variables = identify_unique_variables(con)
     @test(length(variables) == 2)
     @test(Set(variables) == Set([m[:var][1], m[:var][2]]))
@@ -76,8 +73,8 @@ end
 
 function test_several_constraints_with_ineq()
     m = make_degenerate_flow_model()
-    @jmp.constraint(m, ineq1, m[:flow_comp][2] >= 1.0)
-    @jmp.constraint(m, ineq2, m[:flow_comp][1]^2 + m[:flow_comp][3]^2 <= 1.0)
+    @JuMP.constraint(m, ineq1, m[:flow_comp][2] >= 1.0)
+    @JuMP.constraint(m, ineq2, m[:flow_comp][1]^2 + m[:flow_comp][3]^2 <= 1.0)
     constraints = [
         m[:comp_flow_eqn][1],
         m[:sum_comp_eqn],
@@ -102,8 +99,8 @@ end
 
 function test_model()
     m = make_degenerate_flow_model()
-    @jmp.variable(m, dummy)
-    @jmp.NLconstraint(m, dummy^3.0 <= 5)
+    @JuMP.variable(m, dummy)
+    @JuMP.NLconstraint(m, dummy^3.0 <= 5)
     # Note that include_inequalities=false by default.
     variables = identify_unique_variables(m)
     pred_var_set = Set([
@@ -122,8 +119,8 @@ end
 
 function test_model_with_ineq()
     m = make_degenerate_flow_model()
-    @jmp.variable(m, dummy)
-    @jmp.NLconstraint(m, dummy^3.0 <= 5)
+    @JuMP.variable(m, dummy)
+    @JuMP.NLconstraint(m, dummy^3.0 <= 5)
     variables = identify_unique_variables(m, include_inequality=true)
     pred_var_set = Set([
         m[:dummy],
@@ -141,11 +138,11 @@ function test_model_with_ineq()
 end
 
 function test_function_with_variable_squared()
-    m = jmp.Model()
-    @jmp.variable(m, dummy1)
-    @jmp.variable(m, dummy2)
-    @jmp.constraint(m, dummy_con, dummy1^2 + dummy1*dummy2 == 2.0)
-    fcn = moi.get(m, moi.ConstraintFunction(), m[:dummy_con])
+    m = JuMP.Model()
+    @JuMP.variable(m, dummy1)
+    @JuMP.variable(m, dummy2)
+    @JuMP.constraint(m, dummy_con, dummy1^2 + dummy1*dummy2 == 2.0)
+    fcn = MOI.get(m, MOI.ConstraintFunction(), m[:dummy_con])
     variables = identify_unique_variables(fcn)
     @test(length(variables) == 2)
     @test(Set(variables) == Set([m[:dummy1].index, m[:dummy2].index]))
@@ -153,8 +150,8 @@ end
 
 function test_model_bad_constr()
     m = make_degenerate_flow_model()
-    @jmp.variable(m, dummy[1:2])
-    @jmp.constraint(m, vectorcon, dummy in moi.Nonnegatives(2))
+    @JuMP.variable(m, dummy[1:2])
+    @JuMP.constraint(m, vectorcon, dummy in MOI.Nonnegatives(2))
     @test_throws(
         TypeError,
         identify_unique_variables(m, include_inequality=true),
@@ -163,15 +160,15 @@ end
 
 function test_model_bad_constr_no_ineq()
     m = make_degenerate_flow_model()
-    @jmp.variable(m, dummy[1:2])
-    @jmp.constraint(m, vectorcon, dummy in moi.Nonnegatives(2))
+    @JuMP.variable(m, dummy[1:2])
+    @JuMP.constraint(m, vectorcon, dummy in MOI.Nonnegatives(2))
     # Note that we don't throw an error because we don't attempt to
     # identify variables in "vectorcon" as we don't recognize it as an
     # equality constraint.
     #
     # NOTE: We now do throw an error. I have added a method of
     # set_implies_equality that throws an error if it is provided with a
-    # subtype of moi.VectorSet. This is not ~strictly~ correct. However,
+    # subtype of MOI.VectorSet. This is not ~strictly~ correct. However,
     # I have punted for now.
     @test_throws(
         TypeError,
@@ -180,37 +177,37 @@ function test_model_bad_constr_no_ineq()
 end
 
 function test_fixing_constraint()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:2])
-    jmp.fix(x[1], 1)
-    fixing_con = jmp.FixRef(x[1])
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    JuMP.fix(x[1], 1)
+    fixing_con = JuMP.FixRef(x[1])
     variables = identify_unique_variables(fixing_con)
     @test length(variables) == 1
     @test variables[1] === x[1]
 end
 
 function test_inequality_with_bounds()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:2])
-    @jmp.variable(m, 0 <= y[1:2])
-    @jmp.constraint(m, x[1] + 2*x[2]^2 == 1)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    @JuMP.variable(m, 0 <= y[1:2])
+    @JuMP.constraint(m, x[1] + 2*x[2]^2 == 1)
     variables = identify_unique_variables(m, include_inequality = true)
     pred_var_set = Set([x[1], x[2], y[1], y[2]])
     @test Set(variables) == pred_var_set
 end
 
 function test_two_constraints_same_type()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:3])
-    @jmp.constraint(m, eq1, x[1] + x[2] == 2)
-    @jmp.constraint(m, eq2, x[2] + 2*x[3] == 3)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1, x[1] + x[2] == 2)
+    @JuMP.constraint(m, eq2, x[2] + 2*x[3] == 3)
     cons = [eq1, eq2]
     vars = identify_unique_variables(cons)
     pred_var_set = Set([x[1], x[2], x[3]])
     @test Set(vars) == pred_var_set
 end
 
-function runtests()
+@testset "get-equality" begin
     test_linear()
     test_quadratic()
     test_nonlinear()
@@ -225,11 +222,4 @@ function runtests()
     test_fixing_constraint()
     test_inequality_with_bounds()
     test_two_constraints_same_type()
-    return
-end
-
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    TestIdentifyVariables.runtests()
 end
