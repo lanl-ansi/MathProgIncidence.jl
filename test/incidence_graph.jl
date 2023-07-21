@@ -106,12 +106,61 @@ function test_include_bound_as_inequality()
     @test length(E) == 4
     pred_con_set = Set([eq1, jmp.LowerBoundRef(x[1]), jmp.LowerBoundRef(x[2])])
     @test pred_con_set == keys(con_node_map)
+    return
+end
+
+function test_construct_from_constraints()
+    m = jmp.Model()
+    @jmp.variable(m, x[1:3])
+    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    @jmp.constraint(m, eq2, x[2]*x[3] == 0.5)
+    cons = [eq1, eq2]
+    graph, con_node_map, var_node_map = get_bipartite_incidence_graph(cons)
+    A, B, E = graph
+
+    @test con_node_map[eq1] == 1
+    @test con_node_map[eq2] == 2
+
+    predicted_edges = [(eq1, x[1]), (eq1, x[2]), (eq2, x[2]), (eq2, x[3])]
+    @test length(E) == length(predicted_edges)
+    edge_set = Set(E)
+    for (con, var) in predicted_edges
+        @test (con_node_map[con], var_node_map[var]) in edge_set
+    end
+    return
+end
+
+function test_construct_from_constraints_and_variables()
+    m = jmp.Model()
+    @jmp.variable(m, x[1:3])
+    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    @jmp.constraint(m, eq2, x[2]*x[3] == 0.5)
+    cons = [eq2, eq1]
+    vars = [x[3], x[2], x[1]]
+    graph, con_node_map, var_node_map = get_bipartite_incidence_graph(cons, vars)
+    A, B, E = graph
+
+    @test con_node_map[eq1] == 2
+    @test con_node_map[eq2] == 1
+    @test var_node_map[x[1]] == 5
+    @test var_node_map[x[2]] == 4
+    @test var_node_map[x[3]] == 3
+
+    predicted_edges = [(eq1, x[1]), (eq1, x[2]), (eq2, x[2]), (eq2, x[3])]
+    @test length(E) == length(predicted_edges)
+    edge_set = Set(E)
+    for (con, var) in predicted_edges
+        @test (con_node_map[con], var_node_map[var]) in edge_set
+    end
+    return
 end
 
 function runtests()
     test_get_incidence_graph()
     test_get_incidence_graph_badconstraint()
     test_include_bound_as_inequality()
+    test_construct_from_constraints()
+    test_construct_from_constraints_and_variables()
     return
 end
 
