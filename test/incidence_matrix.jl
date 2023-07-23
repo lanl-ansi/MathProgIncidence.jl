@@ -17,24 +17,19 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module TestIncidenceMatrix
-
-import JuMP as jmp
-import MathOptInterface as moi
+import JuMP
 import SparseArrays
-using Test: @test, @test_throws
+using Test: @test, @test_throws, @testset
 
 import JuMPIn as ji
 
-include("models.jl") # Models
-using .Models: make_degenerate_flow_model
-
+include("models.jl") # make_degenerate_flow_model
 
 function test_incidence_matrix_from_constraints_and_variables()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:3])
-    @jmp.constraint(m, eq1, 2*x[1] + 3*x[2] == 4)
-    @jmp.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1, 2*x[1] + 3*x[2] == 4)
+    @JuMP.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
     constraints = [eq1, eq2]
     variables = [x[1], x[2], x[3]]
     imat = ji.incidence_matrix(constraints, variables)
@@ -48,10 +43,10 @@ function test_incidence_matrix_from_constraints_and_variables()
 end
 
 function test_incidence_matrix_from_incidence_graph()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:3])
-    @jmp.constraint(m, eq1, 2*x[1] + 3*x[2] == 4)
-    @jmp.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1, 2*x[1] + 3*x[2] == 4)
+    @JuMP.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
     constraints = [eq1, eq2]
     variables = [x[3], x[2], x[1]]
     igraph = ji.IncidenceGraphInterface(constraints, variables)
@@ -65,15 +60,7 @@ function test_incidence_matrix_from_incidence_graph()
     @test imat == pred_mat
 end
 
-
-function runtests()
+@testset "incidence-matrix" begin
     test_incidence_matrix_from_constraints_and_variables()
     test_incidence_matrix_from_incidence_graph()
-    return
-end
-
-end # module TestIncidenceGraph
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    TestIncidenceMatrix.runtests()
 end

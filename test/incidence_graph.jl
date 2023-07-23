@@ -17,15 +17,12 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module TestIncidenceGraph
-
-import JuMP as jmp
-import MathOptInterface as moi
-using Test: @test, @test_throws
+import JuMP
+import MathOptInterface as MOI
+using Test: @test, @test_throws, @testset
 using JuMPIn: get_bipartite_incidence_graph
 
-include("models.jl") # Models
-using .Models: make_degenerate_flow_model
+include("models.jl") # make_degenerate_flow_model
 
 function test_get_incidence_graph()
     m = make_degenerate_flow_model()
@@ -84,8 +81,8 @@ end
 
 function test_get_incidence_graph_badconstraint()
     m = make_degenerate_flow_model()
-    @jmp.variable(m, var[1:2])
-    @jmp.constraint(m, vectorcon, var in moi.Nonnegatives(2))
+    @JuMP.variable(m, var[1:2])
+    @JuMP.constraint(m, vectorcon, var in MOI.Nonnegatives(2))
     @test_throws(
         TypeError,
         get_bipartite_incidence_graph(m, include_inequality=true),
@@ -94,9 +91,9 @@ function test_get_incidence_graph_badconstraint()
 end
 
 function test_include_bound_as_inequality()
-    m = jmp.Model()
-    @jmp.variable(m, 0 <= x[1:2])
-    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    m = JuMP.Model()
+    @JuMP.variable(m, 0 <= x[1:2])
+    @JuMP.constraint(m, eq1, x[1] + 2*x[2] == 1)
     graph, con_node_map, var_node_map = get_bipartite_incidence_graph(
         m, include_inequality = true
     )
@@ -104,16 +101,16 @@ function test_include_bound_as_inequality()
     @test length(A) == 3
     @test length(B) == 2
     @test length(E) == 4
-    pred_con_set = Set([eq1, jmp.LowerBoundRef(x[1]), jmp.LowerBoundRef(x[2])])
+    pred_con_set = Set([eq1, JuMP.LowerBoundRef(x[1]), JuMP.LowerBoundRef(x[2])])
     @test pred_con_set == keys(con_node_map)
     return
 end
 
 function test_construct_from_constraints()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:3])
-    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
-    @jmp.constraint(m, eq2, x[2]*x[3] == 0.5)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    @JuMP.constraint(m, eq2, x[2]*x[3] == 0.5)
     cons = [eq1, eq2]
     graph, con_node_map, var_node_map = get_bipartite_incidence_graph(cons)
     A, B, E = graph
@@ -131,10 +128,10 @@ function test_construct_from_constraints()
 end
 
 function test_construct_from_constraints_and_variables()
-    m = jmp.Model()
-    @jmp.variable(m, x[1:3])
-    @jmp.constraint(m, eq1, x[1] + 2*x[2] == 1)
-    @jmp.constraint(m, eq2, x[2]*x[3] == 0.5)
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, eq1, x[1] + 2*x[2] == 1)
+    @JuMP.constraint(m, eq2, x[2]*x[3] == 0.5)
     cons = [eq2, eq1]
     vars = [x[3], x[2], x[1]]
     graph, con_node_map, var_node_map = get_bipartite_incidence_graph(cons, vars)
@@ -155,17 +152,10 @@ function test_construct_from_constraints_and_variables()
     return
 end
 
-function runtests()
+@testset "incidence-graph" begin
     test_get_incidence_graph()
     test_get_incidence_graph_badconstraint()
     test_include_bound_as_inequality()
     test_construct_from_constraints()
     test_construct_from_constraints_and_variables()
-    return
-end
-
-end # module TestIncidenceGraph
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    TestIncidenceGraph.runtests()
 end

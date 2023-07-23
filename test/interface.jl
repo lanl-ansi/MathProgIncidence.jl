@@ -17,20 +17,11 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module TestInterface
-
-using Test: @test, @test_throws
+using Test: @test, @test_throws, @testset
 import JuMP
 import JuMPIn as ji
 
-# Note: Do not import from IncidenceGraphInterface here; this will
-# lead to the module being defined multiple times, and causes problems
-# in the REPL.
-#using .Interface: IncidenceGraphInterface
-
-include("models.jl")
-using .Models: make_degenerate_flow_model
-
+include("models.jl") # make_degenerate_flow_model
 
 function _test_igraph_fields(igraph, constraints, variables)
     @test Set(variables) == keys(igraph._var_node_map)
@@ -298,7 +289,7 @@ function test_dulmage_mendelsohn_from_constraints_and_variables()
     return
 end
 
-function runtests()
+@testset "interface" begin
     test_construct_interface()
     test_construct_interface_rectangular()
     test_get_adjacent_to_linear_constraint()
@@ -312,11 +303,4 @@ function runtests()
     test_interface_from_constraints_and_variables()
     test_matching_from_constraints_and_variables()
     test_dulmage_mendelsohn_from_constraints_and_variables()
-end
-
-end
-
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    TestInterface.runtests()
 end
