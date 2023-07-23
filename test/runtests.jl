@@ -42,4 +42,9 @@ using Test
         TestInterface.runtests()
     end
 
+    @testset "IncidenceMatrix" begin
+        include("incidence_matrix.jl")
+        TestIncidenceMatrix.runtests()
+    end
+
 end
