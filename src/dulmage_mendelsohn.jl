@@ -17,7 +17,7 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-import Graphs as gjl
+import Graphs
 
 import JuMPIn: maximum_matching, _is_valid_bipartition
 
@@ -27,12 +27,12 @@ In this function, matching must contain a key for every matched node.
 I.e., Set(keys(matching)) == Set(values(matching))
 """
 function _get_projected_digraph(
-    graph::gjl.Graph, nodes::Vector, matching::Dict
+    graph::Graphs.Graph, nodes::Vector, matching::Dict
 )
     # Note that we are constructing a graph in a projected space, and must
     # be aware of whether coordinates are in original or projected spaces.
     orig_proj_map = Dict(n => i for (i, n) in enumerate(nodes))
-    n_nodes = gjl.nv(graph)
+    n_nodes = Graphs.nv(graph)
     n_nodes_proj = length(nodes)
     matched_nodes = keys(matching)
     node_set = Set(nodes) # Set of nodes in the original space
@@ -41,7 +41,7 @@ function _get_projected_digraph(
         orig_node = nodes[proj_node]
         if orig_node in matched_nodes
             # In-edges from all (other) neighbors of matched node
-            for nbr in gjl.neighbors(graph, matching[orig_node])
+            for nbr in Graphs.neighbors(graph, matching[orig_node])
                 if nbr != orig_node
                     nbr_proj = orig_proj_map[nbr]
                     push!(edge_set, (nbr_proj, proj_node))
@@ -50,29 +50,29 @@ function _get_projected_digraph(
         end
         # TODO: Out edges?
     end
-    digraph = gjl.DiGraph(n_nodes_proj)
+    digraph = Graphs.DiGraph(n_nodes_proj)
     for (n1, n2) in edge_set
-        gjl.add_edge!(digraph, n1, n2)
+        Graphs.add_edge!(digraph, n1, n2)
     end
     return digraph, orig_proj_map
 end
 
 
-function _get_reachable_from(digraph::gjl.DiGraph, nodes::Vector)
-    n_nodes = gjl.nv(digraph)
+function _get_reachable_from(digraph::Graphs.DiGraph, nodes::Vector)
+    n_nodes = Graphs.nv(digraph)
     source_set = Set(nodes)
-    gjl.add_vertex!(digraph)
+    Graphs.add_vertex!(digraph)
     # Note that root needs to be in this scope so it can be accessed in
     # finally block
     root = n_nodes + 1
     bfs_parents = Vector{Int64}()
     try
         for node in nodes
-            gjl.add_edge!(digraph, root, node)
+            Graphs.add_edge!(digraph, root, node)
         end
-        bfs_parents = gjl.bfs_parents(digraph, root)
+        bfs_parents = Graphs.bfs_parents(digraph, root)
     finally
-        gjl.rem_vertex!(digraph, root)
+        Graphs.rem_vertex!(digraph, root)
     end
     reachable = [
         node for (node, par) in enumerate(bfs_parents)
@@ -82,11 +82,11 @@ function _get_reachable_from(digraph::gjl.DiGraph, nodes::Vector)
 end
 
 
-function dulmage_mendelsohn(graph::gjl.Graph, set1::Set)
+function dulmage_mendelsohn(graph::Graphs.Graph, set1::Set)
     if !_is_valid_bipartition(graph, set1)
         throw(Exception)
     end
-    n_nodes = gjl.nv(graph)
+    n_nodes = Graphs.nv(graph)
     set2 = setdiff(Set(1:n_nodes), set1)
 
     # Compute maximum matching between bipartite sets

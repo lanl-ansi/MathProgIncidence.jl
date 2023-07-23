@@ -26,9 +26,7 @@ import JuMP
 
 import JuMPIn: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
-import Graphs as gjl
-import BipartiteMatching as bpm
-
+import Graphs
 
 """
 Utility function to convert a tuple of nodes and edges into a
@@ -39,16 +37,15 @@ function _tuple_to_graphs_jl(bip_graph)
     # Assumption here is that A and B are disjoint. And also form
     # a partition of 1:nv.
     nv = length(A) + length(B)
-    graph = gjl.Graph(gjl.Edge.(E))
+    graph = Graphs.Graph(Graphs.Edge.(E))
     # If E does not cover all vertices, some vertices may not appear in the
     # graph. Add these missing vertices.
-    n_missing = nv - gjl.nv(graph)
-    gjl.add_vertices!(graph, n_missing)
+    n_missing = nv - Graphs.nv(graph)
+    Graphs.add_vertices!(graph, n_missing)
     # Note that by constructing this graph, we have lost our particular
     # bipartition.
     return graph
 end
-
 
 function _maps_to_nodes(con_map, var_map)
     n_nodes = length(con_map) + length(var_map)
@@ -64,7 +61,6 @@ function _maps_to_nodes(con_map, var_map)
     end
     return nodes
 end
-
 
 """
     IncidenceGraphInterface(model; include_inequality = false)
@@ -99,7 +95,6 @@ struct IncidenceGraphInterface
     _nodes
 end
 
-
 IncidenceGraphInterface(
     args::GraphDataTuple
 ) = IncidenceGraphInterface(
@@ -109,7 +104,6 @@ IncidenceGraphInterface(
     _maps_to_nodes(args[2], args[3]),
 )
 
-
 IncidenceGraphInterface(
     m::JuMP.Model;
     include_inequality::Bool = false,
@@ -117,14 +111,12 @@ IncidenceGraphInterface(
     get_bipartite_incidence_graph(m, include_inequality = include_inequality)
 )
 
-
 IncidenceGraphInterface(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
 ) = IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)
 )
-
 
 """
     get_adjacent(
@@ -140,11 +132,10 @@ function get_adjacent(
     constraint::JuMP.ConstraintRef,
 )::Vector{JuMP.VariableRef}
     con_node = igraph._con_node_map[constraint]
-    var_nodes = gjl.neighbors(igraph._graph, con_node)
+    var_nodes = Graphs.neighbors(igraph._graph, con_node)
     variables = [igraph._nodes[n] for n in var_nodes]
     return variables
 end
-
 
 """
     get_adjacent(
@@ -176,11 +167,10 @@ function get_adjacent(
     variable::JuMP.VariableRef,
 )::Vector{JuMP.ConstraintRef}
     var_node = igraph._var_node_map[variable]
-    con_nodes = gjl.neighbors(igraph._graph, var_node)
+    con_nodes = Graphs.neighbors(igraph._graph, var_node)
     constraints = [igraph._nodes[n] for n in con_nodes]
     return constraints
 end
-
 
 """
     maximum_matching(igraph::IncidenceGraphInterface)::Dict
@@ -350,7 +340,6 @@ function dulmage_mendelsohn(
     )
     return con_dmp, var_dmp
 end
-
 
 function dulmage_mendelsohn(
     constraints::Vector{<:JuMP.ConstraintRef},
