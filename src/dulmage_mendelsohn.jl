@@ -129,7 +129,7 @@ function dulmage_mendelsohn(graph::Graphs.Graph, set1::Set)
     matched_with_reachable1 = [matching[n] for n in reachable1]
     matched_with_reachable2 = [matching[n] for n in reachable2]
 
-    filter = cat(
+    filter = Set(cat(
         unmatched1,
         unmatched2,
         reachable1,
@@ -137,7 +137,7 @@ function dulmage_mendelsohn(graph::Graphs.Graph, set1::Set)
         matched_with_reachable1,
         matched_with_reachable2;
         dims=1,
-    )
+    ))
     other1 = [n for n in nodes1 if !(n in filter)]
     other2 = [n for n in nodes2 if !(n in filter)]
 
