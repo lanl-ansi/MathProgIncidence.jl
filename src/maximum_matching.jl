@@ -18,8 +18,6 @@
 #  ___________________________________________________________________________
 
 import Graphs
-import BipartiteMatching as BM
-
 
 """
 TODO: This should probably be promoted to Graphs.jl
@@ -44,20 +42,11 @@ function _is_valid_bipartition(graph::Graphs.Graph, set1::Set)
     return true
 end
 
-
 function maximum_matching(graph::Graphs.Graph, set1::Set)
     if !_is_valid_bipartition(graph, set1)
         throw(Exception)
     end
-    n_nodes = Graphs.nv(graph)
-    card1 = length(set1)
-    nodes1 = sort([node for node in set1])
-    set2 = setdiff(Set(1:n_nodes), set1)
-    nodes2 = sort([node for node in set2])
-    edge_set = Set((n1, n2) for n1 in nodes1 for n2 in Graphs.neighbors(graph, n1))
-    amat = BitArray{2}((r, c) in edge_set for r in nodes1, c in nodes2)
-    matching, _ = BM.findmaxcardinalitybipartitematching(amat)
-    # Translate row/column coordinates back into nodes of the graph
-    graph_matching = Dict(nodes1[r] => nodes2[c] for (r, c) in matching)
-    return graph_matching
+    matching = Graphs.hopcroft_karp_matching(graph, set1)
+    matching = Dict(i => j for (i, j) in matching if i in set1)
+    return matching
 end
