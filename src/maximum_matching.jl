@@ -42,11 +42,15 @@ function _is_valid_bipartition(graph::Graphs.Graph, set1::Set)
     return true
 end
 
+"""
+Compute a maximum matching as a map from vertices in `set1` to their
+matched vertices.
+"""
 function maximum_matching(graph::Graphs.Graph, set1::Set)
     if !_is_valid_bipartition(graph, set1)
         throw(Exception)
     end
-    matching = Graphs.hopcroft_karp_matching(graph, set1)
+    matching = Graphs.hopcroft_karp_matching(graph)
     matching = Dict(i => j for (i, j) in matching if i in set1)
     return matching
 end
