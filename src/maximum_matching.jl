@@ -45,6 +45,11 @@ function _is_valid_bipartition(graph::Graphs.Graph, set1::Set)
     return true
 end
 
+# The following three functions are copied from the branch in PR #291
+# of Graphs.jl, https://github.com/JuliaGraphs/Graphs.jl/pull/291.
+# They will be removed when/if this PR is merged in favor of using the
+# Graphs.jl maximum_matching function.
+
 """
 Determine whether an augmenting path exists and mark distances
 so we can compute shortest-length augmenting paths in the DFS.
