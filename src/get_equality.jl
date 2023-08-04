@@ -47,17 +47,6 @@ function set_implies_equality(set::MOI.EqualTo)::Bool
     return true
 end
 
-# Q: How does Julia determine if an argument has the right type.
-# I.e. why is this interpreted as "set must be a subtype of Union(...)"
-# rather than "set must be an 'instance' of Union()".
-#function set_implies_equality(
-#    set::Union{MOI.GreaterThan, MOI.LessThan},
-#    # Note that ^this works, but this doesn't
-#    # set::Type{<:Union{MOI.GreaterThan, MOI.LessThan}},
-#)::Bool
-#    return false
-#end
-
 function set_implies_equality(set::T)::Bool where T<:MOI.AbstractVectorSet
     throw(TypeError(set, MOI.AbstractScalarSet, typeof(set)))
 end
@@ -107,6 +96,30 @@ function set_implies_equality(
     return false
 end
 
+function set_implies_inequality(set::MOI.GreaterThan)::Bool
+    return true
+end
+
+function set_implies_inequality(set::MOI.LessThan)::Bool
+    return true
+end
+
+function set_implies_inequality(
+    set::MOI.Interval;
+    tolerance::Float64=0.0,
+)::Bool
+    # NOTE: tolerance has not been implemented in any calling function
+    return abs(set.upper - set.lower) > tolerance
+end
+
+function set_implies_inequality(set::MOI.AbstractSet)::Bool
+    return false
+end
+
+# TODO: set_implies_inequality(set::MOI.AbstractSet, tolerance)
+# that just calls set_implies_inequality(set). I.e. the default
+# is to ignore the tolerance.
+
 """
     is_equality(constraint::JuMP.Model)::Bool
 
@@ -120,8 +133,17 @@ function is_equality(constraint::JuMP.ConstraintRef)::Bool
     return set_implies_equality(set)
 end
 
+"""
+"""
+function is_inequality(constraint::JuMP.ConstraintRef)::Bool
+    model = constraint.model
+    index = constraint.index
+    set = _get_set_of_constraint(model, constraint, index)
+    return set_implies_inequality(set)
+end
+
 function get_equality_constraints(
-    constraints::Vector{JuMP.ConstraintRef}
+    constraints::Vector{<:JuMP.ConstraintRef}
 )::Vector{JuMP.ConstraintRef}
     eq_cons = Vector{JuMP.ConstraintRef}()
     for con in constraints
@@ -157,4 +179,78 @@ function get_equality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
         include_variable_in_set_constraints=true,
     )
     return get_equality_constraints(constraints)
+end
+
+function get_inequality_constraints(
+    constraints::Vector{<:JuMP.ConstraintRef}
+)::Vector{JuMP.ConstraintRef}
+    ineq_cons = Vector{JuMP.ConstraintRef}()
+    for con in constraints
+        if is_inequality(con)
+            push!(ineq_cons, con)
+        end
+    end
+    return ineq_cons
+end
+
+function get_inequality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
+    constraints = JuMP.all_constraints(
+        model,
+        include_variable_in_set_constraints = true,
+    )
+    return get_inequality_constraints(constraints)
+end
+
+function get_active_inequality_constraints(
+    model::JuMP.Model;
+    tolerance::Float64=0.0,
+)::Vector{JuMP.ConstraintRef}
+    active_ineq = Vector{JuMP.ConstraintRef}()
+    constraints = JuMP.all_constraints(
+        model,
+        include_variable_in_set_constraints = true,
+    )
+    for con in get_inequality_constraints(constraints)
+        if is_active(con; tolerance = tolerance)
+            push!(active_ineq, con)
+        end
+    end
+    return active_ineq
+end
+
+function is_active(
+    con::JuMP.ConstraintRef;
+    tolerance::Float64=0.0,
+)::Bool
+    model = con.model
+    index = con.index
+    set = _get_set_of_constraint(model, con, index)
+    return is_active(con, set; tolerance = tolerance)
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.GreaterThan;
+    tolerance::Float64=0.0,
+)::Bool
+    return abs(JuMP.value(con) - set.lower) <= tolerance
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.LessThan;
+    tolerance::Float64=0.0,
+)::Bool
+    return abs(set.upper - JuMP.value(con)) <= tolerance
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.Interval;
+    tolerance::Float64=0.0
+)::Bool
+    return (
+        abs(set.upper - JuMP.value(con)) <= tolerance
+        || abs(JuMP.value(con) - set.lower) <= tolerance
+    )
 end
