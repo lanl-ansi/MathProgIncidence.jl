@@ -148,17 +148,26 @@ Return the constraints adjacent to a variable in an incidence graph.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:3]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> adj_cons = ji.get_adjacent(igraph, v[1]);
+
 julia> display(adj_cons)
 2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
+
 ```
 
 """
@@ -182,17 +191,26 @@ The returned `Dict` maps JuMP `ConstraintRef`s to their matched `VariableRef`s.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:3]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> matching = ji.maximum_matching(igraph);
+
 julia> display(matching)
 Dict{ConstraintRef, VariableRef} with 2 entries:
   v[1] * v[2] ^ 3.0 - 2.0 = 0 => v[2]
   eq_1 : v[1] + v[3] = 1.0 => v[1]
+
 ```
 
 """
@@ -285,35 +303,50 @@ and constraints.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:4]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> @constraint(m, eq_3, v[4]^2 == 3);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+
 julia> # Assert that there are no unmatched constraints
+
 julia> @assert isempty(con_dmp.unmatched);
+
 julia> display(var_dmp.unmatched)
 1-element Vector{VariableRef}:
  v[3]
+
 julia> display(var_dmp.underconstrained)
 2-element Vector{VariableRef}:
  v[1]
  v[2]
+
 julia> display(con_dmp.underconstrained)
 2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
+ 
 julia> display(var_dmp.square)
 1-element Vector{VariableRef}:
  v[4]
+
 julia> display(con_dmp.square)
 1-element Vector{ConstraintRef}:
  eq_3 : v[4]² = 3.0
-julia> # As there are no unmatched constraints, the overconstrained subsystem
-julia> # is empty.
+
+julia> # As there are no unmatched constraints, the overconstrained subsystem is empty
 ```
 
 """

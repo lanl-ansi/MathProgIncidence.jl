@@ -140,14 +140,21 @@ Return a vector of equality constraints in the provided model.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v);
+
 julia> @constraint(m, v == 1);
+
 julia> eq_cons = ji.get_equality_constraints(m);
+
 julia> display(eq_cons)
 1-element Vector{ConstraintRef}:
  eq_con_1 : v = 1.0
+
 ```
 
 """
