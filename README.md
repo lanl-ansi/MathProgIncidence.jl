@@ -26,7 +26,6 @@ julia> ]
 This package depends on
 [JuMP](https://github.com/jump-dev/jump.jl),
 [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl),
-[BipartiteMatching.jl](https://github.com/IsaacRudich/BipartiteMatching.jl),
 and the dependencies thereof.
 
 ## Example
