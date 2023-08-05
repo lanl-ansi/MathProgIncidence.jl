@@ -19,7 +19,7 @@ $ git clone https://github.com/lanl-ansi/JuMPIn.jl
 $ cd JuMPIn.jl
 $ julia
 julia> ]
-(v1.8) pkg> add .
+(v1.9) pkg> add .
 ```
 
 ## Dependencies
@@ -47,10 +47,10 @@ comps = [1, 2, 3]
 
 igraph = ji.IncidenceGraphInterface(m)
 con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
-oc_con = cat(con_dmp.overconstrained, con_dmp.unmatched, dims = 1)
+oc_con = [con_dmp.overconstrained..., con_dmp.unmatched...]
 oc_var = var_dmp.overconstrained
 uc_con = con_dmp.underconstrained
-uc_var = cat(var_dmp.unmatched, var_dmp.underconstrained, dims = 1)
+uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...]
 
 println("Overconstrained subsystem")
 println("-------------------------")
