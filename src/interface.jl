@@ -353,7 +353,7 @@ end
     connected_components(igraph::IncidenceGraphInterface)
 
 Return the connected components of a bipartite incidence graph of constraints
-and components.
+and variables.
 
 The connected components are returned as two vector-of-vectors, containing
 the variables in each connected component and the constraints in each
@@ -387,6 +387,7 @@ julia> var_comps
 2-element Vector{Vector{VariableRef}}:
  [x[1]]
  [x[2]]
+
 ```
 """
 function connected_components(
@@ -401,6 +402,52 @@ function connected_components(
     return con_comps, var_comps
 end
 
+"""
+    connected_components(constraints, variables)
+
+Return the connected components of a bipartite incidence graph of constraints
+and variables.
+
+The method that accepts constraints and variables directly is convenient for
+working with the output of the Dulmage-Mendelsohn partition. It is often used
+to decompose and help debug the over and under-constrained subsystems.
+
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:4] >= 0);
+
+julia> @constraint(m, eq1, x[1] + x[3] == 7);
+
+julia> @constraint(m, eq2, x[2]^2 + x[4]^2 == 1);
+
+julia> igraph = ji.IncidenceGraphInterface(m);
+
+julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+
+julia> uc_con = con_dmp.underconstrained;
+
+julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
+
+julia> con_comps, var_comps = ji.connected_components(uc_con, uc_var);
+
+julia> con_comps
+2-element Vector{Vector{ConstraintRef}}:
+ [eq1 : x[1] + x[3] = 7]
+ [eq2 : x[2]² + x[4]² = 1]
+
+julia> var_comps
+2-element Vector{Vector{VariableRef}}:
+ [x[3], x[1]]
+ [x[4], x[2]]
+
+```
+"""
 function connected_components(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
