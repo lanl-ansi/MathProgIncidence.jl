@@ -348,3 +348,35 @@ function dulmage_mendelsohn(
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end
+
+"""
+    connected_components(igraph::IncidenceGraphInterface)
+
+Return the connected components of a bipartite incidence graph of constraints
+and components.
+
+The connected components are returned as two vector-of-vectors, containing
+the variables in each connected component and the constraints in each
+connected component. Note that the input graph is undirected, so there is no
+distinction between strongly and weakly connected components.
+
+"""
+function connected_components(
+    igraph::IncidenceGraphInterface
+)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+    comps = Graphs.connected_components(igraph._graph)
+    ncon = length(igraph._con_node_map)
+    nodes = igraph._nodes
+    con_node_set = Set(1:ncon)
+    con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
+    var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
+    return con_comps, var_comps
+end
+
+function connected_components(
+    constraints::Vector{<:JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
+)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+    igraph = IncidenceGraphInterface(constraints, variables)
+    return connected_components(igraph)
+end
