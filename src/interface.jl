@@ -360,6 +360,34 @@ the variables in each connected component and the constraints in each
 connected component. Note that the input graph is undirected, so there is no
 distinction between strongly and weakly connected components.
 
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:2] >= 0);
+
+julia> @constraint(m, eq1, x[1] == 1);
+
+julia> @constraint(m, eq2, x[2]^2 == 2);
+
+julia> igraph = ji.IncidenceGraphInterface(m);
+
+julia> con_comps, var_comps = ji.connected_components(igraph);
+
+julia> con_comps
+2-element Vector{Vector{ConstraintRef}}:
+ [eq1 : x[1] = 1]
+ [eq2 : x[2]² = 2]
+
+julia> var_comps
+2-element Vector{Vector{VariableRef}}:
+ [x[1]]
+ [x[2]]
+```
 """
 function connected_components(
     igraph::IncidenceGraphInterface
