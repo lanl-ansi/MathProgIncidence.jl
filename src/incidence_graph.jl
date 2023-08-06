@@ -59,23 +59,36 @@ the model, and the variables are those that participate in these constraints.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:3]);
+
 julia> @constraint(m, eq_1, v[1] + v[3]^2 == 1.0);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0);
+
 julia> graph, con_node_map, var_node_map = ji.get_bipartite_incidence_graph(m);
+
 julia> A, B, E = graph;
+
 julia> M = length(A);
+
 julia> N = length(B);
+
 julia> imat = zeros(M, N);
+
 julia> for (a, b) in E
-julia>     imat[a, b-M] = 1.0;
-julia> end
+           imat[a, b-M] = 1.0;
+       end
+
 julia> display(imat)
 2×3 Matrix{Float64}:
  1.0  1.0  0.0
  0.0  1.0  1.0
+
 ```
 
 # Convention

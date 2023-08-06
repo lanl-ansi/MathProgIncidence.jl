@@ -4,7 +4,6 @@ authors = ["Robert Parker and contributors"]
 version = "0.1.0"
 
 [deps]
-BipartiteMatching = "79040ab4-24c8-4c92-950c-d48b5991a0f6"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"

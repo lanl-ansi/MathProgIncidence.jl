@@ -148,17 +148,26 @@ Return the constraints adjacent to a variable in an incidence graph.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:3]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> adj_cons = ji.get_adjacent(igraph, v[1]);
+
 julia> display(adj_cons)
 2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
+
 ```
 
 """
@@ -182,17 +191,26 @@ The returned `Dict` maps JuMP `ConstraintRef`s to their matched `VariableRef`s.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:3]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> matching = ji.maximum_matching(igraph);
+
 julia> display(matching)
 Dict{ConstraintRef, VariableRef} with 2 entries:
   v[1] * v[2] ^ 3.0 - 2.0 = 0 => v[2]
   eq_1 : v[1] + v[3] = 1.0 => v[1]
+
 ```
 
 """
@@ -285,35 +303,50 @@ and constraints.
 # Example
 ```julia-repl
 julia> using JuMP
+
 julia> import JuMPIn as ji
+
 julia> m = Model();
+
 julia> @variable(m, v[1:4]);
+
 julia> @constraint(m, eq_1, v[1] + v[3] == 1);
+
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
+
 julia> @constraint(m, eq_3, v[4]^2 == 3);
+
 julia> igraph = ji.IncidenceGraphInterface(m);
+
 julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+
 julia> # Assert that there are no unmatched constraints
+
 julia> @assert isempty(con_dmp.unmatched);
+
 julia> display(var_dmp.unmatched)
 1-element Vector{VariableRef}:
  v[3]
+
 julia> display(var_dmp.underconstrained)
 2-element Vector{VariableRef}:
  v[1]
  v[2]
+
 julia> display(con_dmp.underconstrained)
 2-element Vector{ConstraintRef}:
  eq_1 : v[1] + v[3] = 1.0
  v[1] * v[2] ^ 3.0 - 2.0 = 0
+ 
 julia> display(var_dmp.square)
 1-element Vector{VariableRef}:
  v[4]
+
 julia> display(con_dmp.square)
 1-element Vector{ConstraintRef}:
  eq_3 : v[4]² = 3.0
-julia> # As there are no unmatched constraints, the overconstrained subsystem
-julia> # is empty.
+
+julia> # As there are no unmatched constraints, the overconstrained subsystem is empty
 ```
 
 """
@@ -347,4 +380,111 @@ function dulmage_mendelsohn(
 )::Tuple{DMConPartition, DMVarPartition}
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
+end
+
+"""
+    connected_components(igraph::IncidenceGraphInterface)
+
+Return the connected components of a bipartite incidence graph of constraints
+and variables.
+
+The connected components are returned as two vector-of-vectors, containing
+the variables in each connected component and the constraints in each
+connected component. Note that the input graph is undirected, so there is no
+distinction between strongly and weakly connected components.
+
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:2] >= 0);
+
+julia> @constraint(m, eq1, x[1] == 1);
+
+julia> @constraint(m, eq2, x[2]^2 == 2);
+
+julia> igraph = ji.IncidenceGraphInterface(m);
+
+julia> con_comps, var_comps = ji.connected_components(igraph);
+
+julia> con_comps
+2-element Vector{Vector{ConstraintRef}}:
+ [eq1 : x[1] = 1]
+ [eq2 : x[2]² = 2]
+
+julia> var_comps
+2-element Vector{Vector{VariableRef}}:
+ [x[1]]
+ [x[2]]
+
+```
+"""
+function connected_components(
+    igraph::IncidenceGraphInterface
+)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+    comps = Graphs.connected_components(igraph._graph)
+    ncon = length(igraph._con_node_map)
+    nodes = igraph._nodes
+    con_node_set = Set(1:ncon)
+    con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
+    var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
+    return con_comps, var_comps
+end
+
+"""
+    connected_components(constraints, variables)
+
+Return the connected components of a bipartite incidence graph of constraints
+and variables.
+
+The method that accepts constraints and variables directly is convenient for
+working with the output of the Dulmage-Mendelsohn partition. It is often used
+to decompose and help debug the over and under-constrained subsystems.
+
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:4] >= 0);
+
+julia> @constraint(m, eq1, x[1] + x[3] == 7);
+
+julia> @constraint(m, eq2, x[2]^2 + x[4]^2 == 1);
+
+julia> igraph = ji.IncidenceGraphInterface(m);
+
+julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+
+julia> uc_con = con_dmp.underconstrained;
+
+julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
+
+julia> con_comps, var_comps = ji.connected_components(uc_con, uc_var);
+
+julia> con_comps
+2-element Vector{Vector{ConstraintRef}}:
+ [eq1 : x[1] + x[3] = 7]
+ [eq2 : x[2]² + x[4]² = 1]
+
+julia> var_comps
+2-element Vector{Vector{VariableRef}}:
+ [x[3], x[1]]
+ [x[4], x[2]]
+
+```
+"""
+function connected_components(
+    constraints::Vector{<:JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
+)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+    igraph = IncidenceGraphInterface(constraints, variables)
+    return connected_components(igraph)
 end
