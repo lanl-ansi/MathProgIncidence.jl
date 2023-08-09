@@ -71,6 +71,15 @@ function test_get_inequality_constraints()
         m[:range1],
     ])
     @test Set(ineq_constraints) == pred_ineq_set
+    return
+end
+
+function test_get_inequality_bad_constraint()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, x in MOI.Nonnegatives(3))
+    @test_throws(TypeError, ineq_constraints = get_inequality_constraints(m))
+    return
 end
 
 @testset "get-equality" begin
@@ -78,4 +87,5 @@ end
     test_with_vector_constraint()
     test_with_fixed_variables()
     test_get_inequality_constraints()
+    test_get_inequality_bad_constraint()
 end
