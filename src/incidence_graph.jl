@@ -110,23 +110,12 @@ function get_bipartite_incidence_graph(
     include_active_inequalities::Bool = false,
     tolerance::Float64 = 0.0,
 )::GraphDataTuple
-    if include_inequality && include_active_inequalities
-        throw(ArgumentError(
-            "include_inequality and include_active_inequalities cannot both be true"
-        ))
-    end
-    eq_constraints = get_equality_constraints(model)
-    if include_inequality
-        ineq_constraints = get_inequality_constraints(model)
-        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
-    elseif include_active_inequalities
-        ineq_constraints = get_active_inequality_constraints(
-            model, tolerance = tolerance
-        )
-        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
-    else
-        constraints = eq_constraints
-    end
+    constraints = _get_constraints(
+        model,
+        include_inequality = include_inequality,
+        include_active_inequalities = include_active_inequalities,
+        tolerance = tolerance
+    )
     # Here we get the incidence graph of the constraints, which will by
     # default include all the variables in these constraints.
     # TODO: Should there be an option to include all the variables in the

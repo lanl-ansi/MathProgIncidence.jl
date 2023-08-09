@@ -88,22 +88,19 @@ Each variable appears at most one time in the returned vector.
 
 """
 function identify_unique_variables(
-    model::JuMP.Model; include_inequality::Bool=false,
+    model::JuMP.Model;
+    include_inequality::Bool=false,
+    include_active_inequalities::Bool = false,
+    tolerance::Float64 = 0.0,
 )::Vector{JuMP.VariableRef}
     # Note that this method exists mostly for convenience, and is not used
     # by any of the "upstream" methods, e.g. get_bipartite_incidence_graph
-    if include_inequality
-        # Note that this may include some constraints which are not compatible
-        # with downstream function calls (e.g. constraints where the function
-        # and terms are vectors). We will allow downstream errors to be raised
-        # rather than silently ignoring these constraints.
-        constraints = JuMP.all_constraints(
-            model,
-            include_variable_in_set_constraints=true,
-        )   
-    else
-        constraints = get_equality_constraints(model)
-    end
+    constraints = _get_constraints(
+        model,
+        include_inequality = include_inequality,
+        include_active_inequalities = include_active_inequalities,
+        tolerance = tolerance,
+    )
     return identify_unique_variables(constraints)
 end
 

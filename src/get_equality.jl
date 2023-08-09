@@ -47,7 +47,7 @@ function set_implies_equality(set::MOI.EqualTo)::Bool
     return true
 end
 
-function set_implies_equality(set::T)::Bool where T<:MOI.AbstractVectorSet
+function set_implies_equality(set::MOI.AbstractVectorSet)::Bool
     throw(TypeError(set, MOI.AbstractScalarSet, typeof(set)))
 end
 
@@ -59,20 +59,6 @@ function set_implies_equality(
     return abs(set.upper - set.lower) <= tolerance
 end
 
-# NOTE: Overload this function to define other constraint sets (e.g. Zeros)
-# as equalities.
-#
-# I intend this to catch anything that is a subtype of ConstraintSet.
-# Is the "subtype syntax" necessary?
-# It appears, e.g., MOI.GreaterThan is not a subtype of MOI.ConstraintSet.
-# This is non-intuitive for me...
-# So this won't catch arbitrary MOI Sets...
-# The right type to use is actually AbstractSet?
-# Nope. This doesn't catch GreatherThan/LessThan
-# ^ Wrong. Actually it does, but my syntax was wrong. I guess providing
-# Type{<:SomeType} enforces that the argument must be a Type, rather than
-# an instance of the type. "issubclass", where what I'm doing below is
-# "isinstance"
 """
     set_implies_equality(set::T)::Bool where T<:MathOptInterface.AbstractSet
 
@@ -90,9 +76,7 @@ types of constraints in [`is_equality`](@ref) and
 `set_implies_equality` should be defined.
 
 """
-function set_implies_equality(
-    set::T
-)::Bool where T<:MOI.AbstractSet
+function set_implies_equality(set::MOI.AbstractSet)::Bool
     return false
 end
 
@@ -264,4 +248,30 @@ function is_active(
         abs(set.upper - JuMP.value(con)) <= tolerance
         || abs(JuMP.value(con) - set.lower) <= tolerance
     )
+end
+
+function _get_constraints(
+    model::JuMP.Model;
+    include_inequality::Bool,
+    include_active_inequalities::Bool,
+    tolerance::Float64 = 0.0,
+)::Vector{JuMP.ConstraintRef}
+    if include_inequality && include_active_inequalities
+        throw(ArgumentError(
+            "include_inequality and include_active_inequalities cannot both be true"
+        ))
+    end
+    eq_constraints = get_equality_constraints(model)
+    if include_inequality
+        ineq_constraints = get_inequality_constraints(model)
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
+    elseif include_active_inequalities
+        ineq_constraints = get_active_inequality_constraints(
+            model, tolerance = tolerance
+        )
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
+    else
+        constraints = eq_constraints
+    end
+    return constraints
 end
