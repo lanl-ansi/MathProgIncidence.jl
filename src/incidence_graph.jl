@@ -115,27 +115,17 @@ function get_bipartite_incidence_graph(
             "include_inequality and include_active_inequalities cannot both be true"
         ))
     end
+    eq_constraints = get_equality_constraints(model)
     if include_inequality
-        # Note that this may generate some constraints that are incompatible
-        # with downstream function calls (e.g. constraints involving vector
-        # expressions).
-        #
-        # This is also repeated in identify_unique_variables(Model).
-        # Identifying all constraints (including inequalities, but probably
-        # not including VectorFunction constraints) may be something we want
-        # to standardize at some point. E.g. a get_scalar_constraints function.
-        constraints = JuMP.all_constraints(
-            model,
-            include_variable_in_set_constraints = true,
-        )   
+        ineq_constraints = get_inequality_constraints(model)
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
     elseif include_active_inequalities
-        eq_constraints = get_equality_constraints(model)
         ineq_constraints = get_active_inequality_constraints(
             model, tolerance = tolerance
         )
         constraints = cat(eq_constraints, ineq_constraints, dims = 1)
     else
-        constraints = get_equality_constraints(model)
+        constraints = eq_constraints
     end
     # Here we get the incidence graph of the constraints, which will by
     # default include all the variables in these constraints.
