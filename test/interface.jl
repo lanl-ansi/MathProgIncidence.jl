@@ -384,6 +384,15 @@ function test_active_inequalities_no_solution()
     return
 end
 
+function test_bad_arguments()
+    m = make_simple_model()
+    @test_throws(ArgumentError, igraph = ji.IncidenceGraphInterface(
+            m, include_active_inequalities = true, include_inequality = true
+        )
+    )
+    return
+end
+
 @testset "interface" begin
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -403,4 +412,5 @@ end
     test_one_connected_component_cons_vars()
     test_construct_interface_active_inequalities()
     test_active_inequalities_no_solution()
+    test_bad_arguments()
 end
