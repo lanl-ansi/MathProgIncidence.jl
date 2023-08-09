@@ -372,6 +372,16 @@ function test_construct_interface_active_inequalities()
     constraints = [m[:eq1]]
     variables = [m[:x][1], m[:x][2], m[:x][3]]
     _test_igraph_fields(igraph, constraints, variables)
+    return
+end
+
+function test_active_inequalities_no_solution()
+    m = make_simple_model()
+    @test_throws(JuMP.OptimizeNotCalled, igraph = ji.IncidenceGraphInterface(
+            m, include_active_inequalities = true, tolerance = 1e-6
+        )
+    )
+    return
 end
 
 @testset "interface" begin
@@ -392,4 +402,5 @@ end
     test_multiple_connected_components_igraph()
     test_one_connected_component_cons_vars()
     test_construct_interface_active_inequalities()
+    test_active_inequalities_no_solution()
 end
