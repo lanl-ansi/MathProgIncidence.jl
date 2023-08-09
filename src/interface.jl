@@ -107,8 +107,15 @@ IncidenceGraphInterface(
 IncidenceGraphInterface(
     m::JuMP.Model;
     include_inequality::Bool = false,
+    include_active_inequalities::Bool = false,
+    tolerance::Float64 = 0.0,
 ) = IncidenceGraphInterface(
-    get_bipartite_incidence_graph(m, include_inequality = include_inequality)
+    get_bipartite_incidence_graph(
+        m,
+        include_inequality = include_inequality,
+        include_active_inequalities = include_active_inequalities,
+        tolerance = tolerance,
+    )
 )
 
 IncidenceGraphInterface(

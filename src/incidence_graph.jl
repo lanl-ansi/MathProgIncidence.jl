@@ -107,7 +107,14 @@ regardless of which variables participate in the constraints.
 function get_bipartite_incidence_graph(
     model::JuMP.Model;
     include_inequality::Bool = false,
+    include_active_inequalities::Bool = false,
+    tolerance::Float64 = 0.0,
 )::GraphDataTuple
+    if include_inequality && include_active_inequalities
+        throw(ArgumentError(
+            "include_inequality and include_active_inequalities cannot both be true"
+        ))
+    end
     if include_inequality
         # Note that this may generate some constraints that are incompatible
         # with downstream function calls (e.g. constraints involving vector
@@ -121,6 +128,12 @@ function get_bipartite_incidence_graph(
             model,
             include_variable_in_set_constraints = true,
         )   
+    elseif include_active_inequalities
+        eq_constraints = get_equality_constraints(model)
+        ineq_constraints = get_active_inequality_constraints(
+            model, tolerance = tolerance
+        )
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
     else
         constraints = get_equality_constraints(model)
     end
