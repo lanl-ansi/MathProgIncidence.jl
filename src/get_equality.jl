@@ -116,6 +116,10 @@ function set_implies_inequality(set::MOI.AbstractSet)::Bool
     return false
 end
 
+function set_implies_inequality(set::MOI.AbstractVectorSet)::Bool
+    throw(TypeError(set, MOI.AbstractScalarSet, typeof(set)))
+end
+
 # TODO: set_implies_inequality(set::MOI.AbstractSet, tolerance)
 # that just calls set_implies_inequality(set). I.e. the default
 # is to ignore the tolerance.
