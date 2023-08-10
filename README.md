@@ -1,5 +1,6 @@
-# JuMPIn.jl
-**JuMP** **In**cidence Graph Analysis. Tools for constructing and analyzing the
+# MathProgIncidence.jl
+**Math Programming Incidence** Graph Analysis.
+Tools for constructing and analyzing the
 incidence graph or matrix of variables and constraints in a JuMP model.
 
 These tools can be used to detect whether and (approximately) why the
@@ -11,7 +12,7 @@ for more information and examples.
 ## Installation
 TODO. Eventually, I would like the following command to work:
 ```julia
-]add JuMPIn
+]add MathProgIncidence
 ```
 For now, only local installation is possible:
 ```
@@ -77,12 +78,12 @@ end
 ```
 
 ## License
-JuMPIn.jl is open-source software released under the 3-clause BSD license.
+MathProgIncidence.jl is open-source software released under the 3-clause BSD license.
 See LICENSE.md for more information.
 
 ## Citation
-We are working on a journal article about JuMPIn.jl and the underlying methods.
-In the meantime, if you use JuMPIn.jl in your research, you may cite the
+We are working on a journal article about MathProgIncidence.jl and the underlying methods.
+In the meantime, if you use MathProgIncidence.jl in your research, you may cite the
 following conference paper:
 ```bibtex
 @inproceedings{parker2023dulmage,
