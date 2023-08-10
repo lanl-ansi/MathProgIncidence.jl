@@ -27,7 +27,7 @@ import JuMP
 import SparseArrays
 import Graphs
 
-import JuMPIn: get_bipartite_incidence_graph, IncidenceGraphInterface
+import MathProgIncidence: get_bipartite_incidence_graph, IncidenceGraphInterface
 
 """
     incidence_matrix(constraints, variables)::SparseMatrixCSC

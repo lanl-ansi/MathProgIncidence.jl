@@ -24,7 +24,7 @@ A JuMP interface to the algorithms implemented by JuMPIn
 
 import JuMP
 
-import JuMPIn: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
+import MathProgIncidence: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
 import Graphs
 
@@ -86,7 +86,7 @@ in a future release without warning.
 # Example using only equality constraints
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence as ji
 m = Model()
 @variable(m, v[1:3] >= 0)
 @constraint(m, eq_1, v[1] + v[3]^2 == 1.0)
@@ -98,7 +98,7 @@ graph = ji.IncidenceGraphInterface(m)
 ```julia
 using JuMP
 import Ipopt
-import JuMPIn as ji
+import MathProgIncidence as ji
 m = Model(Ipopt.Optimizer)
 @variable(m, v[1:3] >= 0)
 @NLconstraint(m, eq_1, v[1]*v[2]^1.5 == 2.0)
@@ -178,7 +178,7 @@ Return the constraints adjacent to a variable in an incidence graph.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
@@ -221,7 +221,7 @@ The returned `Dict` maps JuMP `ConstraintRef`s to their matched `VariableRef`s.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
@@ -333,7 +333,7 @@ and constraints.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
@@ -426,7 +426,7 @@ distinction between strongly and weakly connected components.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
@@ -478,7 +478,7 @@ to decompose and help debug the over and under-constrained subsystems.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 

@@ -21,7 +21,7 @@ import JuMP
 import SparseArrays
 using Test: @test, @test_throws, @testset
 
-import JuMPIn as ji
+import MathProgIncidence as ji
 
 include("models.jl") # make_degenerate_flow_model
 

@@ -18,7 +18,7 @@
 #  ___________________________________________________________________________
 
 using Documenter
-using JuMPIn
+using MathProgIncidence
 
 makedocs(
     sitename = "JuMPIn",

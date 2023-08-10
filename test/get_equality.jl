@@ -20,7 +20,7 @@
 import JuMP
 import MathOptInterface as MOI
 using Test: @test, @test_throws, @testset
-using JuMPIn: get_equality_constraints, get_inequality_constraints, is_active
+using MathProgIncidence: get_equality_constraints, get_inequality_constraints, is_active
 
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 

@@ -17,7 +17,7 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-using JuMPIn
+using MathProgIncidence
 using Test
 
 @testset "JuMPIn.jl" begin

@@ -19,7 +19,7 @@
 
 import Graphs
 
-import JuMPIn: maximum_matching, _is_valid_bipartition
+import MathProgIncidence: maximum_matching, _is_valid_bipartition
 
 
 """

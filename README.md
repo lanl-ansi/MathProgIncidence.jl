@@ -31,7 +31,7 @@ and the dependencies thereof.
 ## Example
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence as ji
 
 m = Model()
 comps = [1, 2, 3]

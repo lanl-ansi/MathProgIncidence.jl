@@ -25,7 +25,7 @@ Utility functions for identifying variables that participate in constraints.
 import JuMP
 import MathOptInterface as MOI
 
-import JuMPIn: get_equality_constraints
+import MathProgIncidence: get_equality_constraints
 
 
 # TODO: This file implements functions that filter duplicates from the
@@ -48,7 +48,7 @@ to work...
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 

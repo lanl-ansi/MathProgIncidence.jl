@@ -20,7 +20,7 @@
 using Test: @test, @test_throws, @testset
 import JuMP
 import Ipopt
-import JuMPIn as ji
+import MathProgIncidence as ji
 
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 

@@ -25,7 +25,7 @@ variables.
 
 import JuMP
 
-import JuMPIn: get_equality_constraints, identify_unique_variables
+import MathProgIncidence: get_equality_constraints, identify_unique_variables
 
 const GraphDataTuple = Tuple{
     # (A, B, E) describing the bipartite graph
@@ -75,7 +75,7 @@ the model, and the **variables are those that participate in these constraints
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 

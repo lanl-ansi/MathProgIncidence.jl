@@ -21,7 +21,7 @@ import JuMP
 import Ipopt
 import MathOptInterface as MOI
 using Test: @testset, @test, @test_throws
-using JuMPIn: identify_unique_variables
+using MathProgIncidence: identify_unique_variables
 
 # Local import of JuMP models for testing
 include("models.jl") # make_degenerate_flow_model, make_simple_model

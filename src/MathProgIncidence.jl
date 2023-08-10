@@ -17,7 +17,7 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-module JuMPIn
+module MathProgIncidence
 
 # Methods to identify equality constraints
 include("get_equality.jl")

@@ -10,7 +10,7 @@ complicated than this. This particular system appeared when debugging a dynamic
 looping combustion reactor.
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence as ji
 
 m = Model()
 comps = [1, 2, 3]
@@ -141,7 +141,7 @@ The following script constructs a new version of the model and checks it for
 structural singularity:
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence as ji
 
 m = Model()
 comps = [1, 2, 3]

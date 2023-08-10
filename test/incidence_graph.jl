@@ -20,7 +20,7 @@
 import JuMP
 import MathOptInterface as MOI
 using Test: @test, @test_throws, @testset
-using JuMPIn: get_bipartite_incidence_graph
+using MathProgIncidence: get_bipartite_incidence_graph
 
 include("models.jl") # make_degenerate_flow_model
 

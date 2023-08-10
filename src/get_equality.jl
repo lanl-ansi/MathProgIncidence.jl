@@ -162,7 +162,7 @@ Return a vector of equality constraints in the provided model.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
@@ -208,7 +208,7 @@ Return the inequality constraints in the provided model.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence as ji
 
 julia> m = Model();
 
