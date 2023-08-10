@@ -80,11 +80,24 @@ end
 
 
 """
-    identify_unique_variables(model::JuMP.Model, include_inequality::Bool=false)
+    identify_unique_variables(
+        model::JuMP.Model,
+        include_inequality = false,
+        include_active_inequalities = false,
+        tolerance = 0.0,
+    )
 
 Return a vector of variables that participate in constraints in the model.
 
 Each variable appears at most one time in the returned vector.
+
+# Optional keyword arguments
+- `include_inequality`: Whether to include variables that participate in *any*
+  inequality constraints
+- `include_active_inequalities`: Whether to include variables that participate
+  *active* inequality constraints (at the latest solution).
+  `include_active_inequalities` and `include_inequality` are mutually exclusive.
+- `tolerance`: Tolerance used to determine if an inequality constraint is active
 
 """
 function identify_unique_variables(

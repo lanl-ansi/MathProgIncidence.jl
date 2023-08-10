@@ -37,14 +37,28 @@ const GraphDataTuple = Tuple{
 }
 
 """
-    get_bipartite_incidence_graph(model, include_inequality = false)
+    get_bipartite_incidence_graph(
+        model,
+        include_inequality = false,
+        include_active_inequalities = false,
+        tolerance = 0.0,
+    )
 
 Return the bipartite incidence graph of (scalar) variables and constraints
 in the JuMP model.
 
-The `include_inequality` argument determines whether inequality constraints
-(constraints with non-singleton sets) should be included in the graph.
+# Arguments
+- `model::JuMP.Model`: Model whose incidence graph is constructed
+- `include_inequality::Bool`: Whether *all* inequality constraints should be
+  included in the graph
+- `include_active_inequalities::Bool`: Whether *only active* inequality
+  constraints should be included in the graph. Constraint activity is determined
+  using the most recent solution. `include_active_inequalities`
+  and `include_inequality` are mutually exclusive.
+- `tolerance::Float64`: Tolerance for deciding whether an inequality constraint
+  is active
 
+# Returns
 This function returns a tuple `(graph, con_node_map, var_node_map)`
 - `graph` -- a tuple `(A, B, E)` where `A` and `B` contain the integer nodes
   in the bipartite sets for constraints and variables and `E` contains
@@ -54,7 +68,8 @@ This function returns a tuple `(graph, con_node_map, var_node_map)`
 - `var_node_map` -- a `Dict` mapping JuMP `VariableRef`s to nodes
 
 The constraints in the graph are all the (by default, equality) constraints in
-the model, and the variables are those that participate in these constraints.
+the model, and the **variables are those that participate in these constraints
+(not all variables in the model)**.
 
 # Example
 ```julia-repl

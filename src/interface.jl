@@ -63,7 +63,12 @@ function _maps_to_nodes(con_map, var_map)
 end
 
 """
-    IncidenceGraphInterface(model; include_inequality = false)
+    IncidenceGraphInterface(
+        model;
+        include_inequality = false,
+        include_active_inequalities = false,
+        tolerance = 0.0,
+    )
 
 A bipartite incidence graph of JuMP constraints and variables.
 
@@ -71,22 +76,39 @@ This is the primary data type accepted by the algorithms implemented in
 the remainder of this module.
 This type can be instantiated with a JuMP model or a tuple of
 `(graph, con_node_map, var_node_map)`, as returned by
-`get_bipartite_incidence_graph`.
+[`get_bipartite_incidence_graph`](@ref).
+If a model is provided, optional arguments are the same as those provided
+to `get_bipartite_incidence_graph`.
 
 Note that the fields of this struct are private, and may change behavior
 in a future release without warning.
 
-# Example
+# Example using only equality constraints
 ```julia
 using JuMP
 import JuMPIn as ji
 m = Model()
-@variable(m, v[1:3])
+@variable(m, v[1:3] >= 0)
 @constraint(m, eq_1, v[1] + v[3]^2 == 1.0)
 @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0)
 graph = ji.IncidenceGraphInterface(m)
 ```
 
+# Example including active inequality constraints
+```julia
+using JuMP
+import Ipopt
+import JuMPIn as ji
+m = Model(Ipopt.Optimizer)
+@variable(m, v[1:3] >= 0)
+@NLconstraint(m, eq_1, v[1]*v[2]^1.5 == 2.0)
+@constraint(m, ineq_1, v[1] + v[2] + v[3] >= 7)
+@objective(m, Min, v[1]^2 + 2*v[2]^2 + 3*v[3]^2)
+optimize!(m)
+graph = ji.IncidenceGraphInterface(
+    m, include_active_inequalities = true, tolerance = 1e-6
+)
+```
 """
 struct IncidenceGraphInterface
     _graph

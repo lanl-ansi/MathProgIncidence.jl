@@ -60,7 +60,7 @@ function set_implies_equality(
 end
 
 """
-    set_implies_equality(set::T)::Bool where T<:MathOptInterface.AbstractSet
+    set_implies_equality(set::MOI.AbstractSet)
 
 Detect whether the set defines an equality constraint, i.e. is a singleton.
 
@@ -96,6 +96,14 @@ function set_implies_inequality(
     return abs(set.upper - set.lower) > tolerance
 end
 
+"""
+    set_implies_inequality(set::MOI.AbstractSet)
+
+Detect whether the set defines an inequality constraint.
+
+This function is defined for scalar sets. Calling with a vector set
+will result in a `TypeError`.
+"""
 function set_implies_inequality(set::MOI.AbstractSet)::Bool
     return false
 end
@@ -109,7 +117,7 @@ end
 # is to ignore the tolerance.
 
 """
-    is_equality(constraint::JuMP.Model)::Bool
+    is_equality(constraint::JuMP.ConstraintRef)::Bool
 
 Detect whether a constraint is an equality constraint.
 
@@ -122,6 +130,9 @@ function is_equality(constraint::JuMP.ConstraintRef)::Bool
 end
 
 """
+    is_inequality(constraint::JuMP.ConstraintRef)
+
+Detect whether a constraint is an inequality constraint.
 """
 function is_inequality(constraint::JuMP.ConstraintRef)::Bool
     model = constraint.model
@@ -188,6 +199,33 @@ function get_inequality_constraints(
     return ineq_cons
 end
 
+"""
+    get_inequality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
+
+Return the inequality constraints in the provided model.
+
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:2] >= 0);
+
+julia> @constraint(m, x[1]*x[2] == 1);
+
+julia> @constraint(m, x[1] + x[2] >= 4);
+
+julia> ji.get_inequality_constraints(m)
+3-element Vector{ConstraintRef}:
+ x[1] + x[2] ≥ 4
+ x[1] ≥ 0
+ x[2] ≥ 0
+```
+Note that variable-in-set constraints *are* included.
+"""
 function get_inequality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
     constraints = JuMP.all_constraints(
         model,
@@ -213,6 +251,18 @@ function get_active_inequality_constraints(
     return active_ineq
 end
 
+"""
+    is_active(con::JuMP.ConstraintRef; tolerance = 0.0)
+
+Return whether the constraint is active within tolerance.
+
+# Methods
+`is_active` is supported for constraints with the following set types:
+- `MOI.GreaterThan`
+- `MOI.LessThan`
+- `MOI.Interval`
+
+"""
 function is_active(
     con::JuMP.ConstraintRef;
     tolerance::Float64=0.0,
@@ -248,6 +298,14 @@ function is_active(
         abs(set.upper - JuMP.value(con)) <= tolerance
         || abs(JuMP.value(con) - set.lower) <= tolerance
     )
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.AbstractSet;
+    tolerance::Float64=0.0
+)
+    throw(ArgumentError("is_active is only supported for inequality constraints"))
 end
 
 function _get_constraints(
