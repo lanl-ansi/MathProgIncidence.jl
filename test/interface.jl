@@ -19,9 +19,10 @@
 
 using Test: @test, @test_throws, @testset
 import JuMP
+import Ipopt
 import JuMPIn as ji
 
-include("models.jl") # make_degenerate_flow_model
+include("models.jl") # make_degenerate_flow_model, make_simple_model
 
 function _test_igraph_fields(igraph, constraints, variables)
     @test Set(variables) == keys(igraph._var_node_map)
@@ -350,6 +351,48 @@ function test_one_connected_component_cons_vars()
     return
 end
 
+function test_construct_interface_active_inequalities()
+    m = make_simple_model()
+    JuMP.set_optimizer(m, Ipopt.Optimizer)
+    JuMP.optimize!(m)
+
+    # Note that this behavior could change if something changes in Ipopt
+    # (although this is not likely)
+
+    igraph = ji.IncidenceGraphInterface(
+        m, include_active_inequalities = true, tolerance = 1e-6
+    )
+    constraints = [m[:eq1], m[:ineq1], m[:ineq2]]
+    variables = [m[:x][1], m[:x][2], m[:x][3]]
+    _test_igraph_fields(igraph, constraints, variables)
+
+    # The default is to use a tolerance of 0.0. With this tolerance, neither
+    # of the inequality constraints are active
+    igraph = ji.IncidenceGraphInterface(m, include_active_inequalities = true)
+    constraints = [m[:eq1]]
+    variables = [m[:x][1], m[:x][2], m[:x][3]]
+    _test_igraph_fields(igraph, constraints, variables)
+    return
+end
+
+function test_active_inequalities_no_solution()
+    m = make_simple_model()
+    @test_throws(JuMP.OptimizeNotCalled, igraph = ji.IncidenceGraphInterface(
+            m, include_active_inequalities = true, tolerance = 1e-6
+        )
+    )
+    return
+end
+
+function test_bad_arguments()
+    m = make_simple_model()
+    @test_throws(ArgumentError, igraph = ji.IncidenceGraphInterface(
+            m, include_active_inequalities = true, include_inequality = true
+        )
+    )
+    return
+end
+
 @testset "interface" begin
     test_construct_interface()
     test_construct_interface_rectangular()
@@ -367,4 +410,7 @@ end
     test_one_connected_component_igraph()
     test_multiple_connected_components_igraph()
     test_one_connected_component_cons_vars()
+    test_construct_interface_active_inequalities()
+    test_active_inequalities_no_solution()
+    test_bad_arguments()
 end

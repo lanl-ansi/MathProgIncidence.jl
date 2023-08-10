@@ -37,14 +37,28 @@ const GraphDataTuple = Tuple{
 }
 
 """
-    get_bipartite_incidence_graph(model, include_inequality = false)
+    get_bipartite_incidence_graph(
+        model,
+        include_inequality = false,
+        include_active_inequalities = false,
+        tolerance = 0.0,
+    )
 
 Return the bipartite incidence graph of (scalar) variables and constraints
 in the JuMP model.
 
-The `include_inequality` argument determines whether inequality constraints
-(constraints with non-singleton sets) should be included in the graph.
+# Arguments
+- `model::JuMP.Model`: Model whose incidence graph is constructed
+- `include_inequality::Bool`: Whether *all* inequality constraints should be
+  included in the graph
+- `include_active_inequalities::Bool`: Whether *only active* inequality
+  constraints should be included in the graph. Constraint activity is determined
+  using the most recent solution. `include_active_inequalities`
+  and `include_inequality` are mutually exclusive.
+- `tolerance::Float64`: Tolerance for deciding whether an inequality constraint
+  is active
 
+# Returns
 This function returns a tuple `(graph, con_node_map, var_node_map)`
 - `graph` -- a tuple `(A, B, E)` where `A` and `B` contain the integer nodes
   in the bipartite sets for constraints and variables and `E` contains
@@ -54,7 +68,8 @@ This function returns a tuple `(graph, con_node_map, var_node_map)`
 - `var_node_map` -- a `Dict` mapping JuMP `VariableRef`s to nodes
 
 The constraints in the graph are all the (by default, equality) constraints in
-the model, and the variables are those that participate in these constraints.
+the model, and the **variables are those that participate in these constraints
+(not all variables in the model)**.
 
 # Example
 ```julia-repl
@@ -107,23 +122,15 @@ regardless of which variables participate in the constraints.
 function get_bipartite_incidence_graph(
     model::JuMP.Model;
     include_inequality::Bool = false,
+    include_active_inequalities::Bool = false,
+    tolerance::Float64 = 0.0,
 )::GraphDataTuple
-    if include_inequality
-        # Note that this may generate some constraints that are incompatible
-        # with downstream function calls (e.g. constraints involving vector
-        # expressions).
-        #
-        # This is also repeated in identify_unique_variables(Model).
-        # Identifying all constraints (including inequalities, but probably
-        # not including VectorFunction constraints) may be something we want
-        # to standardize at some point. E.g. a get_scalar_constraints function.
-        constraints = JuMP.all_constraints(
-            model,
-            include_variable_in_set_constraints = true,
-        )   
-    else
-        constraints = get_equality_constraints(model)
-    end
+    constraints = _get_constraints(
+        model,
+        include_inequality = include_inequality,
+        include_active_inequalities = include_active_inequalities,
+        tolerance = tolerance
+    )
     # Here we get the incidence graph of the constraints, which will by
     # default include all the variables in these constraints.
     # TODO: Should there be an option to include all the variables in the

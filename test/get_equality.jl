@@ -20,9 +20,9 @@
 import JuMP
 import MathOptInterface as MOI
 using Test: @test, @test_throws, @testset
-using JuMPIn: get_equality_constraints
+using JuMPIn: get_equality_constraints, get_inequality_constraints, is_active
 
-include("models.jl") # make_degenerate_flow_model
+include("models.jl") # make_degenerate_flow_model, make_simple_model
 
 function get_flow_model_with_inequalities()
     m = make_degenerate_flow_model()
@@ -44,6 +44,7 @@ function test_with_vector_constraint()
     @JuMP.variable(m, var[1:2])
     @JuMP.constraint(m, con, var in MOI.Nonnegatives(2))
     @test_throws(TypeError, eq_cons = get_equality_constraints(m))
+    return
 end
 
 function test_with_fixed_variables()
@@ -55,10 +56,44 @@ function test_with_fixed_variables()
     JuMP.fix(x[1], 1.0)
     eq_cons = get_equality_constraints(m)
     @test length(eq_cons) == 1
+    return
+end
+
+function test_get_inequality_constraints()
+    m = make_simple_model()
+    ineq_constraints = get_inequality_constraints(m)
+    pred_ineq_set = Set([
+        JuMP.LowerBoundRef(m[:x][1]),
+        JuMP.LowerBoundRef(m[:x][2]),
+        JuMP.LowerBoundRef(m[:x][3]),
+        m[:ineq1],
+        m[:ineq2],
+        m[:range1],
+    ])
+    @test Set(ineq_constraints) == pred_ineq_set
+    return
+end
+
+function test_get_inequality_bad_constraint()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:3])
+    @JuMP.constraint(m, x in MOI.Nonnegatives(3))
+    @test_throws(TypeError, ineq_constraints = get_inequality_constraints(m))
+    return
+end
+
+function test_is_active_bad_constraint()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    @JuMP.constraint(m, eq1, x[1]*x[2] == 1)
+    @test_throws(ArgumentError, is_active(eq1))
 end
 
 @testset "get-equality" begin
     test_flow_model_with_inequalities()
     test_with_vector_constraint()
     test_with_fixed_variables()
+    test_get_inequality_constraints()
+    test_get_inequality_bad_constraint()
+    test_is_active_bad_constraint()
 end

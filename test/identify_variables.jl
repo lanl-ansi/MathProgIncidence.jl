@@ -18,12 +18,13 @@
 #  ___________________________________________________________________________
 
 import JuMP
+import Ipopt
 import MathOptInterface as MOI
 using Test: @testset, @test, @test_throws
 using JuMPIn: identify_unique_variables
 
 # Local import of JuMP models for testing
-include("models.jl") # make_degenerate_flow_model
+include("models.jl") # make_degenerate_flow_model, make_simple_model
 
 function test_linear()
     m = make_degenerate_flow_model()
@@ -207,6 +208,20 @@ function test_two_constraints_same_type()
     @test Set(vars) == pred_var_set
 end
 
+function test_variables_in_inequalities()
+    m = make_simple_model()
+    @JuMP.variable(m, y >= 1)
+    x = m[:x]
+    @JuMP.objective(m, Min, x[1] + 2*x[2] + 3*x[3] + y^2)
+    JuMP.set_optimizer(m, Ipopt.Optimizer)
+    JuMP.optimize!(m)
+    vars = identify_unique_variables(
+        m, include_active_inequalities = true, tolerance = 1e-6
+    )
+    pred_var_set = Set([x..., y])
+    @test Set(vars) == pred_var_set
+end
+
 @testset "get-equality" begin
     test_linear()
     test_quadratic()
@@ -222,4 +237,5 @@ end
     test_fixing_constraint()
     test_inequality_with_bounds()
     test_two_constraints_same_type()
+    test_variables_in_inequalities()
 end

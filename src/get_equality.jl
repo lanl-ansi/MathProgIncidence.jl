@@ -47,18 +47,7 @@ function set_implies_equality(set::MOI.EqualTo)::Bool
     return true
 end
 
-# Q: How does Julia determine if an argument has the right type.
-# I.e. why is this interpreted as "set must be a subtype of Union(...)"
-# rather than "set must be an 'instance' of Union()".
-#function set_implies_equality(
-#    set::Union{MOI.GreaterThan, MOI.LessThan},
-#    # Note that ^this works, but this doesn't
-#    # set::Type{<:Union{MOI.GreaterThan, MOI.LessThan}},
-#)::Bool
-#    return false
-#end
-
-function set_implies_equality(set::T)::Bool where T<:MOI.AbstractVectorSet
+function set_implies_equality(set::MOI.AbstractVectorSet)::Bool
     throw(TypeError(set, MOI.AbstractScalarSet, typeof(set)))
 end
 
@@ -70,22 +59,8 @@ function set_implies_equality(
     return abs(set.upper - set.lower) <= tolerance
 end
 
-# NOTE: Overload this function to define other constraint sets (e.g. Zeros)
-# as equalities.
-#
-# I intend this to catch anything that is a subtype of ConstraintSet.
-# Is the "subtype syntax" necessary?
-# It appears, e.g., MOI.GreaterThan is not a subtype of MOI.ConstraintSet.
-# This is non-intuitive for me...
-# So this won't catch arbitrary MOI Sets...
-# The right type to use is actually AbstractSet?
-# Nope. This doesn't catch GreatherThan/LessThan
-# ^ Wrong. Actually it does, but my syntax was wrong. I guess providing
-# Type{<:SomeType} enforces that the argument must be a Type, rather than
-# an instance of the type. "issubclass", where what I'm doing below is
-# "isinstance"
 """
-    set_implies_equality(set::T)::Bool where T<:MathOptInterface.AbstractSet
+    set_implies_equality(set::MOI.AbstractSet)
 
 Detect whether the set defines an equality constraint, i.e. is a singleton.
 
@@ -101,14 +76,48 @@ types of constraints in [`is_equality`](@ref) and
 `set_implies_equality` should be defined.
 
 """
-function set_implies_equality(
-    set::T
-)::Bool where T<:MOI.AbstractSet
+function set_implies_equality(set::MOI.AbstractSet)::Bool
     return false
 end
 
+function set_implies_inequality(set::MOI.GreaterThan)::Bool
+    return true
+end
+
+function set_implies_inequality(set::MOI.LessThan)::Bool
+    return true
+end
+
+function set_implies_inequality(
+    set::MOI.Interval;
+    tolerance::Float64=0.0,
+)::Bool
+    # NOTE: tolerance has not been implemented in any calling function
+    return abs(set.upper - set.lower) > tolerance
+end
+
 """
-    is_equality(constraint::JuMP.Model)::Bool
+    set_implies_inequality(set::MOI.AbstractSet)
+
+Detect whether the set defines an inequality constraint.
+
+This function is defined for scalar sets. Calling with a vector set
+will result in a `TypeError`.
+"""
+function set_implies_inequality(set::MOI.AbstractSet)::Bool
+    return false
+end
+
+function set_implies_inequality(set::MOI.AbstractVectorSet)::Bool
+    throw(TypeError(set, MOI.AbstractScalarSet, typeof(set)))
+end
+
+# TODO: set_implies_inequality(set::MOI.AbstractSet, tolerance)
+# that just calls set_implies_inequality(set). I.e. the default
+# is to ignore the tolerance.
+
+"""
+    is_equality(constraint::JuMP.ConstraintRef)::Bool
 
 Detect whether a constraint is an equality constraint.
 
@@ -120,8 +129,20 @@ function is_equality(constraint::JuMP.ConstraintRef)::Bool
     return set_implies_equality(set)
 end
 
+"""
+    is_inequality(constraint::JuMP.ConstraintRef)
+
+Detect whether a constraint is an inequality constraint.
+"""
+function is_inequality(constraint::JuMP.ConstraintRef)::Bool
+    model = constraint.model
+    index = constraint.index
+    set = _get_set_of_constraint(model, constraint, index)
+    return set_implies_inequality(set)
+end
+
 function get_equality_constraints(
-    constraints::Vector{JuMP.ConstraintRef}
+    constraints::Vector{<:JuMP.ConstraintRef}
 )::Vector{JuMP.ConstraintRef}
     eq_cons = Vector{JuMP.ConstraintRef}()
     for con in constraints
@@ -164,4 +185,153 @@ function get_equality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
         include_variable_in_set_constraints=true,
     )
     return get_equality_constraints(constraints)
+end
+
+function get_inequality_constraints(
+    constraints::Vector{<:JuMP.ConstraintRef}
+)::Vector{JuMP.ConstraintRef}
+    ineq_cons = Vector{JuMP.ConstraintRef}()
+    for con in constraints
+        if is_inequality(con)
+            push!(ineq_cons, con)
+        end
+    end
+    return ineq_cons
+end
+
+"""
+    get_inequality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
+
+Return the inequality constraints in the provided model.
+
+# Example
+```julia-repl
+julia> using JuMP
+
+julia> import JuMPIn as ji
+
+julia> m = Model();
+
+julia> @variable(m, x[1:2] >= 0);
+
+julia> @constraint(m, x[1]*x[2] == 1);
+
+julia> @constraint(m, x[1] + x[2] >= 4);
+
+julia> ji.get_inequality_constraints(m)
+3-element Vector{ConstraintRef}:
+ x[1] + x[2] ≥ 4
+ x[1] ≥ 0
+ x[2] ≥ 0
+```
+Note that variable-in-set constraints *are* included.
+"""
+function get_inequality_constraints(model::JuMP.Model)::Vector{JuMP.ConstraintRef}
+    constraints = JuMP.all_constraints(
+        model,
+        include_variable_in_set_constraints = true,
+    )
+    return get_inequality_constraints(constraints)
+end
+
+function get_active_inequality_constraints(
+    model::JuMP.Model;
+    tolerance::Float64=0.0,
+)::Vector{JuMP.ConstraintRef}
+    active_ineq = Vector{JuMP.ConstraintRef}()
+    constraints = JuMP.all_constraints(
+        model,
+        include_variable_in_set_constraints = true,
+    )
+    for con in get_inequality_constraints(constraints)
+        if is_active(con; tolerance = tolerance)
+            push!(active_ineq, con)
+        end
+    end
+    return active_ineq
+end
+
+"""
+    is_active(con::JuMP.ConstraintRef; tolerance = 0.0)
+
+Return whether the constraint is active within tolerance.
+
+# Methods
+`is_active` is supported for constraints with the following set types:
+- `MOI.GreaterThan`
+- `MOI.LessThan`
+- `MOI.Interval`
+
+"""
+function is_active(
+    con::JuMP.ConstraintRef;
+    tolerance::Float64=0.0,
+)::Bool
+    model = con.model
+    index = con.index
+    set = _get_set_of_constraint(model, con, index)
+    return is_active(con, set; tolerance = tolerance)
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.GreaterThan;
+    tolerance::Float64=0.0,
+)::Bool
+    return abs(JuMP.value(con) - set.lower) <= tolerance
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.LessThan;
+    tolerance::Float64=0.0,
+)::Bool
+    return abs(set.upper - JuMP.value(con)) <= tolerance
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.Interval;
+    tolerance::Float64=0.0
+)::Bool
+    return (
+        abs(set.upper - JuMP.value(con)) <= tolerance
+        || abs(JuMP.value(con) - set.lower) <= tolerance
+    )
+end
+
+function is_active(
+    con::JuMP.ConstraintRef,
+    set::MOI.AbstractSet;
+    tolerance::Float64=0.0
+)
+    # Note that this is not a TypeError as we don't have a single that is_active
+    # supports.
+    throw(ArgumentError("is_active is only supported for inequality constraints"))
+end
+
+function _get_constraints(
+    model::JuMP.Model;
+    include_inequality::Bool,
+    include_active_inequalities::Bool,
+    tolerance::Float64 = 0.0,
+)::Vector{JuMP.ConstraintRef}
+    if include_inequality && include_active_inequalities
+        throw(ArgumentError(
+            "include_inequality and include_active_inequalities cannot both be true"
+        ))
+    end
+    eq_constraints = get_equality_constraints(model)
+    if include_inequality
+        ineq_constraints = get_inequality_constraints(model)
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
+    elseif include_active_inequalities
+        ineq_constraints = get_active_inequality_constraints(
+            model, tolerance = tolerance
+        )
+        constraints = cat(eq_constraints, ineq_constraints, dims = 1)
+    else
+        constraints = eq_constraints
+    end
+    return constraints
 end
