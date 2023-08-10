@@ -20,7 +20,7 @@
 import JuMP
 import MathOptInterface as MOI
 using Test: @test, @test_throws, @testset
-using JuMPIn: get_equality_constraints, get_inequality_constraints
+using JuMPIn: get_equality_constraints, get_inequality_constraints, is_active
 
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 
@@ -82,10 +82,18 @@ function test_get_inequality_bad_constraint()
     return
 end
 
+function test_is_active_bad_constraint()
+    m = JuMP.Model()
+    @JuMP.variable(m, x[1:2])
+    @JuMP.constraint(m, eq1, x[1]*x[2] == 1)
+    @test_throws(ArgumentError, is_active(eq1))
+end
+
 @testset "get-equality" begin
     test_flow_model_with_inequalities()
     test_with_vector_constraint()
     test_with_fixed_variables()
     test_get_inequality_constraints()
     test_get_inequality_bad_constraint()
+    test_is_active_bad_constraint()
 end
