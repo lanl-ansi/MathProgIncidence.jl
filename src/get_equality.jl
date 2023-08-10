@@ -305,6 +305,8 @@ function is_active(
     set::MOI.AbstractSet;
     tolerance::Float64=0.0
 )
+    # Note that this is not a TypeError as we don't have a single that is_active
+    # supports.
     throw(ArgumentError("is_active is only supported for inequality constraints"))
 end
 
