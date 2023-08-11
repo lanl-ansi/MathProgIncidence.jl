@@ -1,7 +1,7 @@
 # Identifying equality and inequality constraints
 
 ```@meta
-CurrentModule = JuMPIn
+CurrentModule = MathProgIncidence
 ```
 
 ```@docs

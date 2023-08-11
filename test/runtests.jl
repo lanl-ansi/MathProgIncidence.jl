@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -17,10 +17,10 @@
 #  This software is distributed under the 3-clause BSD license.
 #  ___________________________________________________________________________
 
-using JuMPIn
+using MathProgIncidence
 using Test
 
-@testset "JuMPIn.jl" begin
+@testset "MathProgIncidence.jl" begin
     include("identify_variables.jl")
     include("get_equality.jl")
     include("incidence_graph.jl")

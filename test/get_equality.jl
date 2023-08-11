@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -20,7 +20,7 @@
 import JuMP
 import MathOptInterface as MOI
 using Test: @test, @test_throws, @testset
-using JuMPIn: get_equality_constraints, get_inequality_constraints, is_active
+using MathProgIncidence: get_equality_constraints, get_inequality_constraints, is_active
 
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 

@@ -1,7 +1,7 @@
 # Incidence matrix
 
 ```@meta
-CurrentModule = JuMPIn
+CurrentModule = MathProgIncidence
 ```
 
 ```@docs

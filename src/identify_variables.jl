@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -25,7 +25,7 @@ Utility functions for identifying variables that participate in constraints.
 import JuMP
 import MathOptInterface as MOI
 
-import JuMPIn: get_equality_constraints
+import MathProgIncidence: get_equality_constraints
 
 
 # TODO: This file implements functions that filter duplicates from the
@@ -48,7 +48,7 @@ to work...
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -58,7 +58,7 @@ julia> @constraint(m, eq_1, v[2] == 1);
 
 julia> @NLconstraint(m, eq_2, v[2]*v[3]^1.5 == 2);
 
-julia> vars = ji.identify_unique_variables([eq_1, eq_2]);
+julia> vars = MathProgIncidence.identify_unique_variables([eq_1, eq_2]);
 
 julia> display(vars)
 2-element Vector{VariableRef}:

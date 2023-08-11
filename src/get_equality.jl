@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -162,7 +162,7 @@ Return a vector of equality constraints in the provided model.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -170,7 +170,7 @@ julia> @variable(m, v);
 
 julia> @constraint(m, v == 1);
 
-julia> eq_cons = ji.get_equality_constraints(m);
+julia> eq_cons = MathProgIncidence.get_equality_constraints(m);
 
 julia> display(eq_cons)
 1-element Vector{ConstraintRef}:
@@ -208,7 +208,7 @@ Return the inequality constraints in the provided model.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -218,7 +218,7 @@ julia> @constraint(m, x[1]*x[2] == 1);
 
 julia> @constraint(m, x[1] + x[2] >= 4);
 
-julia> ji.get_inequality_constraints(m)
+julia> MathProgIncidence.get_inequality_constraints(m)
 3-element Vector{ConstraintRef}:
  x[1] + x[2] ≥ 4
  x[1] ≥ 0

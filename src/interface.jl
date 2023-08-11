@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -24,7 +24,7 @@ A JuMP interface to the algorithms implemented by JuMPIn
 
 import JuMP
 
-import JuMPIn: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
+import MathProgIncidence: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
 import Graphs
 
@@ -86,26 +86,26 @@ in a future release without warning.
 # Example using only equality constraints
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence
 m = Model()
 @variable(m, v[1:3] >= 0)
 @constraint(m, eq_1, v[1] + v[3]^2 == 1.0)
 @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0)
-graph = ji.IncidenceGraphInterface(m)
+graph = MathProgIncidence.IncidenceGraphInterface(m)
 ```
 
 # Example including active inequality constraints
 ```julia
 using JuMP
 import Ipopt
-import JuMPIn as ji
+import MathProgIncidence
 m = Model(Ipopt.Optimizer)
 @variable(m, v[1:3] >= 0)
 @NLconstraint(m, eq_1, v[1]*v[2]^1.5 == 2.0)
 @constraint(m, ineq_1, v[1] + v[2] + v[3] >= 7)
 @objective(m, Min, v[1]^2 + 2*v[2]^2 + 3*v[3]^2)
 optimize!(m)
-graph = ji.IncidenceGraphInterface(
+graph = MathProgIncidence.IncidenceGraphInterface(
     m, include_active_inequalities = true, tolerance = 1e-6
 )
 ```
@@ -178,7 +178,7 @@ Return the constraints adjacent to a variable in an incidence graph.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -188,9 +188,9 @@ julia> @constraint(m, eq_1, v[1] + v[3] == 1);
 
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
 
-julia> igraph = ji.IncidenceGraphInterface(m);
+julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> adj_cons = ji.get_adjacent(igraph, v[1]);
+julia> adj_cons = MathProgIncidence.get_adjacent(igraph, v[1]);
 
 julia> display(adj_cons)
 2-element Vector{ConstraintRef}:
@@ -221,7 +221,7 @@ The returned `Dict` maps JuMP `ConstraintRef`s to their matched `VariableRef`s.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -231,9 +231,9 @@ julia> @constraint(m, eq_1, v[1] + v[3] == 1);
 
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
 
-julia> igraph = ji.IncidenceGraphInterface(m);
+julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> matching = ji.maximum_matching(igraph);
+julia> matching = MathProgIncidence.maximum_matching(igraph);
 
 julia> display(matching)
 Dict{ConstraintRef, VariableRef} with 2 entries:
@@ -333,7 +333,7 @@ and constraints.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -345,9 +345,9 @@ julia> @NLconstraint(m, eq_2, v[1]*v[2]^3 == 2);
 
 julia> @constraint(m, eq_3, v[4]^2 == 3);
 
-julia> igraph = ji.IncidenceGraphInterface(m);
+julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+julia> con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph);
 
 julia> # Assert that there are no unmatched constraints
 
@@ -426,7 +426,7 @@ distinction between strongly and weakly connected components.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -436,9 +436,9 @@ julia> @constraint(m, eq1, x[1] == 1);
 
 julia> @constraint(m, eq2, x[2]^2 == 2);
 
-julia> igraph = ji.IncidenceGraphInterface(m);
+julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> con_comps, var_comps = ji.connected_components(igraph);
+julia> con_comps, var_comps = MathProgIncidence.connected_components(igraph);
 
 julia> con_comps
 2-element Vector{Vector{ConstraintRef}}:
@@ -478,7 +478,7 @@ to decompose and help debug the over and under-constrained subsystems.
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -488,15 +488,15 @@ julia> @constraint(m, eq1, x[1] + x[3] == 7);
 
 julia> @constraint(m, eq2, x[2]^2 + x[4]^2 == 1);
 
-julia> igraph = ji.IncidenceGraphInterface(m);
+julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph);
+julia> con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph);
 
 julia> uc_con = con_dmp.underconstrained;
 
 julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
 
-julia> con_comps, var_comps = ji.connected_components(uc_con, uc_var);
+julia> con_comps, var_comps = MathProgIncidence.connected_components(uc_con, uc_var);
 
 julia> con_comps
 2-element Vector{Vector{ConstraintRef}}:

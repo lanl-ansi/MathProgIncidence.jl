@@ -10,7 +10,7 @@ complicated than this. This particular system appeared when debugging a dynamic
 looping combustion reactor.
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence
 
 m = Model()
 comps = [1, 2, 3]
@@ -27,8 +27,8 @@ comps = [1, 2, 3]
 To check this model for structural singularity, we apply the Dulmage-Mendelsohn
 partition.
 ```julia
-igraph = ji.IncidenceGraphInterface(m)
-con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+igraph = MathProgIncidence.IncidenceGraphInterface(m)
+con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
 ```
 If any variables or constraints are unmatched, the (Jacobian of the) model
 is structurally singular.
@@ -141,7 +141,7 @@ The following script constructs a new version of the model and checks it for
 structural singularity:
 ```julia
 using JuMP
-import JuMPIn as ji
+import MathProgIncidence
 
 m = Model()
 comps = [1, 2, 3]
@@ -160,7 +160,7 @@ velocity = 1.0
 @constraint(m, flow_eqn, flow == velocity * rho_bulk)
 @constraint(m, comp_flow_eqn, x.*flow .== flow_comp)
 
-igraph = ji.IncidenceGraphInterface(m)
-con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+igraph = MathProgIncidence.IncidenceGraphInterface(m)
+con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
 @assert isempty(con_dmp.unmatched) && isempty(var_dmp.unmatched)
 ```

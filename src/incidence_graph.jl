@@ -1,6 +1,6 @@
 #  ___________________________________________________________________________
 #
-#  JuMPIn.jl: JuMP Incidence Graph Analysis
+#  MathProgIncidence.jl: Math Programming Incidence Graph Analysis
 #  Copyright (c) 2023. Triad National Security, LLC. All rights reserved.
 #
 #  This program was produced under U.S. Government contract 89233218CNA000001
@@ -25,7 +25,7 @@ variables.
 
 import JuMP
 
-import JuMPIn: get_equality_constraints, identify_unique_variables
+import MathProgIncidence: get_equality_constraints, identify_unique_variables
 
 const GraphDataTuple = Tuple{
     # (A, B, E) describing the bipartite graph
@@ -75,7 +75,7 @@ the model, and the **variables are those that participate in these constraints
 ```julia-repl
 julia> using JuMP
 
-julia> import JuMPIn as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -85,7 +85,7 @@ julia> @constraint(m, eq_1, v[1] + v[3]^2 == 1.0);
 
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0);
 
-julia> graph, con_node_map, var_node_map = ji.get_bipartite_incidence_graph(m);
+julia> graph, con_node_map, var_node_map = MathProgIncidence.get_bipartite_incidence_graph(m);
 
 julia> A, B, E = graph;
 
