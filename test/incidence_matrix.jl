@@ -21,7 +21,7 @@ import JuMP
 import SparseArrays
 using Test: @test, @test_throws, @testset
 
-import MathProgIncidence as ji
+import MathProgIncidence
 
 include("models.jl") # make_degenerate_flow_model
 
@@ -32,7 +32,7 @@ function test_incidence_matrix_from_constraints_and_variables()
     @JuMP.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
     constraints = [eq1, eq2]
     variables = [x[1], x[2], x[3]]
-    imat = ji.incidence_matrix(constraints, variables)
+    imat = MathProgIncidence.incidence_matrix(constraints, variables)
     pred_row = [1, 1, 2, 2]
     pred_col = [1, 2, 2, 3]
     pred_val = [1.0, 1.0, 1.0, 1.0]
@@ -49,8 +49,8 @@ function test_incidence_matrix_from_incidence_graph()
     @JuMP.NLconstraint(m, eq2, 2*x[3]^1.5*x[2] == 1)
     constraints = [eq1, eq2]
     variables = [x[3], x[2], x[1]]
-    igraph = ji.IncidenceGraphInterface(constraints, variables)
-    imat = ji.incidence_matrix(igraph)
+    igraph = MathProgIncidence.IncidenceGraphInterface(constraints, variables)
+    imat = MathProgIncidence.incidence_matrix(igraph)
     pred_row = [1, 1, 2, 2]
     pred_col = [3, 2, 2, 1]
     pred_val = [1.0, 1.0, 1.0, 1.0]

@@ -75,7 +75,7 @@ the model, and the **variables are those that participate in these constraints
 ```julia-repl
 julia> using JuMP
 
-julia> import MathProgIncidence as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -85,7 +85,7 @@ julia> @constraint(m, eq_1, v[1] + v[3]^2 == 1.0);
 
 julia> @NLconstraint(m, eq_2, v[1]*v[2]^1.5 == 2.0);
 
-julia> graph, con_node_map, var_node_map = ji.get_bipartite_incidence_graph(m);
+julia> graph, con_node_map, var_node_map = MathProgIncidence.get_bipartite_incidence_graph(m);
 
 julia> A, B, E = graph;
 

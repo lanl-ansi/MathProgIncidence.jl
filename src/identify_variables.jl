@@ -48,7 +48,7 @@ to work...
 ```julia-repl
 julia> using JuMP
 
-julia> import MathProgIncidence as ji
+julia> import MathProgIncidence
 
 julia> m = Model();
 
@@ -58,7 +58,7 @@ julia> @constraint(m, eq_1, v[2] == 1);
 
 julia> @NLconstraint(m, eq_2, v[2]*v[3]^1.5 == 2);
 
-julia> vars = ji.identify_unique_variables([eq_1, eq_2]);
+julia> vars = MathProgIncidence.identify_unique_variables([eq_1, eq_2]);
 
 julia> display(vars)
 2-element Vector{VariableRef}:
