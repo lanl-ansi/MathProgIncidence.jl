@@ -6,7 +6,7 @@ incidence graph or matrix of variables and constraints in a JuMP model.
 These tools can be used to detect whether and (approximately) why the
 Jacobian of equality constraints is structurally or numerically singular,
 which commonly happens as the result of a modeling error.
-See the [documentation](https://lanl-ansi.github.io/JuMPIn.jl/dev/)
+See the [documentation](https://lanl-ansi.github.io/MathProgIncidence.jl/dev/)
 for more information and examples.
 
 ## Installation
@@ -16,8 +16,8 @@ TODO. Eventually, I would like the following command to work:
 ```
 For now, only local installation is possible:
 ```
-$ git clone https://github.com/lanl-ansi/JuMPIn.jl
-$ cd JuMPIn.jl
+$ git clone https://github.com/lanl-ansi/MathProgIncidence.jl
+$ cd MathProgIncidence.jl
 $ julia
 julia> ]
 (v1.9) pkg> add .
