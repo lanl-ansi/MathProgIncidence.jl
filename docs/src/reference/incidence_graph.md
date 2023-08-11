@@ -1,7 +1,7 @@
 # Incidence graph
 
 ```@meta
-CurrentModule = JuMPIn
+CurrentModule = MathProgIncidence
 ```
 
 ```@docs

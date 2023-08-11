@@ -1,17 +1,17 @@
 # Overview
 
-## What is JuMPIn?
-JuMPIn is a JuMP extension that provides algorithms for analyzing incidence
+## What is MathProgIncidence?
+MathProgIncidence is a JuMP extension that provides algorithms for analyzing incidence
 graphs or matrices defined by JuMP variables and constraints. The standard
 graph that is analyzed is a bipartite graph of variables and constraints,
 where an edge exists between a variable and constraint if the variable
 participates in the constraint.
 
-## Why is JuMPIn useful?
+## Why is MathProgIncidence useful?
 In a large modeling/optimization project, especially one involving several
 developers, it is fairly easy to make a mistake designing or implementing
 an algebraic model. These mistakes commonly cause singularities in the Jacobian
-of equality constraints. The algorithms implemented in JuMPIn
+of equality constraints. The algorithms implemented in MathProgIncidence
 allow a modeler to identify irreducible subsets of variables and constraints
 that are causing singularities, which can be very useful when debugging a
 suspected modeling error.
@@ -28,9 +28,8 @@ In the case of nonlinear local optimization, symptoms that are often indicative
 of modeling errors are large regularization coefficients and large numbers
 of restoration iterations in interior point methods.
 
-## What algorithms does JuMPIn implement?
-1. The **Dulmage-Mendelsohn partition** (TODO: link reference documentation and cite paper), which detects subsets of variables and constraints causing a structural singularity
-2. The **block triangularization** algorithm of Duff and Reid (TODO: link reference documentation and cite), which detects subsets of variables and constraints causing a numerical singularity
+## What algorithms does MathProgIncidence implement?
+1. The **Dulmage-Mendelsohn partition**, which detects subsets of variables and constraints causing a structural singularity. See [`MathProgIncidence.dulmage_mendelsohn`](@ref).
 More algorithms may be implemented in the future.
 
 ## What models should these be applied to?

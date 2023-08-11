@@ -1,7 +1,7 @@
 # Identifying variables in constraints
 
 ```@meta
-CurrentModule = JuMPIn
+CurrentModule = MathProgIncidence
 ```
 
 ```@docs

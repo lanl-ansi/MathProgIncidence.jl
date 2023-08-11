@@ -1,7 +1,7 @@
 # Algorithm interfaces
 
 ```@meta
-CurrentModule = JuMPIn
+CurrentModule = MathProgIncidence
 ```
 
 ```@docs
