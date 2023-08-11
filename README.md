@@ -32,7 +32,7 @@ and the dependencies thereof.
 ## Example
 ```julia
 using JuMP
-import MathProgIncidence as ji
+import MathProgIncidence
 
 m = Model()
 comps = [1, 2, 3]
@@ -46,8 +46,8 @@ comps = [1, 2, 3]
 @NLconstraint(m, bulk_dens_eqn, 1/rho - sum(1/x[j] for j in comps) == 0)
 @constraint(m, comp_flow_eqn, x.*flow .== flow_comp)
 
-igraph = ji.IncidenceGraphInterface(m)
-con_dmp, var_dmp = ji.dulmage_mendelsohn(igraph)
+igraph = MathProgIncidence.IncidenceGraphInterface(m)
+con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
 oc_con = [con_dmp.overconstrained..., con_dmp.unmatched...]
 oc_var = var_dmp.overconstrained
 uc_con = con_dmp.underconstrained
