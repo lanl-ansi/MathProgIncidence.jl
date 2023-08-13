@@ -1,7 +1,7 @@
 name = "MathProgIncidence"
 uuid = "892fab00-3092-4bd0-9c46-66676a93f84e"
 authors = ["Robert Parker and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
