@@ -213,11 +213,11 @@ end
 Return the variables that appear in the provided MathOptInterface function.
 
 # Implementation
-Only `ScalarQuadraticFunction` and `ScalarAffineFunction` are supported.
-This can be changed there is demand for other functions. For each type of
-supported function, the `_get_variable_terms` function should be defined.
-Then, for the type of each term, an additional `identify_unique_variables`
-function should be implemented.
+Only `ScalarNonlinearFunction`, `ScalarQuadraticFunction`, and
+`ScalarAffineFunction` are supported. This can be changed there is demand for
+other functions. For each type of supported function, the `_get_variable_terms`
+function should be defined. Then, for the type of each term, an additional
+`identify_unique_variables` function should be implemented.
 
 """
 function identify_unique_variables(
