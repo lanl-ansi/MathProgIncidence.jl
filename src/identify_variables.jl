@@ -207,7 +207,6 @@ function identify_unique_variables(
     return _filter_duplicates(refs)
 end
 
-
 """
     identify_unique_variables(fcn)::Vector{JuMP.VariableIndex}
 
@@ -221,6 +220,18 @@ Then, for the type of each term, an additional `identify_unique_variables`
 function should be implemented.
 
 """
+function identify_unique_variables(
+    fcn::MOI.ScalarNonlinearFunction
+)::Vector{MOI.VariableIndex}
+    variables = Vector{MOI.VariableIndex}()
+    for arg in fcn.args
+        for var in identify_unique_variables(arg)
+            push!(variables, var)
+        end
+    end
+    return _filter_duplicates(variables)
+end
+
 function identify_unique_variables(
     fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
 )::Vector{MOI.VariableIndex}
@@ -236,8 +247,8 @@ function identify_unique_variables(
 end
 
 function identify_unique_variables(
-    fcn::T
-)::Vector{MOI.VariableIndex} where {T<:MOI.AbstractVectorFunction}
+    fcn::MOI.AbstractVectorFunction
+)::Vector{MOI.VariableIndex}
     throw(TypeError(
         fcn,
         Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
@@ -249,6 +260,11 @@ function identify_unique_variables(
     var::MOI.VariableIndex
 )::Vector{MOI.VariableIndex}
     return [var]
+end
+
+# To support nodes in ScalarNonlinearFunction expression tree
+function identify_unique_variables(var::Float64)::Vector{MOI.VariableIndex}
+    return []
 end
 
 
