@@ -10,17 +10,11 @@ See the [documentation](https://lanl-ansi.github.io/MathProgIncidence.jl/dev/)
 for more information and examples.
 
 ## Installation
-TODO. Eventually, I would like the following command to work:
+MathProgIncidence is registered on the Julia general package registry.
+It can be installed with:
 ```julia
-]add MathProgIncidence
-```
-For now, only local installation is possible:
-```
-$ git clone https://github.com/lanl-ansi/MathProgIncidence.jl
-$ cd MathProgIncidence.jl
-$ julia
 julia> ]
-(v1.9) pkg> add .
+(@v1.X) pkg> add MathProgIncidence
 ```
 
 ## Dependencies
