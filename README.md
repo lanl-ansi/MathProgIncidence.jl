@@ -76,14 +76,18 @@ MathProgIncidence.jl is open-source software released under the 3-clause BSD lic
 See LICENSE.md for more information.
 
 ## Citation
-We are working on a journal article about MathProgIncidence.jl and the underlying methods.
-In the meantime, if you use MathProgIncidence.jl in your research, you may cite the
-following conference paper:
+If you use MathProgIncidence.jl in your research, we would appreciate you citing
+the following paper:
 ```bibtex
-@inproceedings{parker2023dulmage,
-  title={{An application of the Dulmage-Mendelsohn partition to the analysis of a discretized dynamic chemical looping combustion reactor model}},
-  author={Robert Parker and Chinedu Okoli and Bethany Nicholson and John Siirola and Lorenz Biegler},
-  booktitle={Proceedings of FOCAPO/CPC 2023},
-  year={2023}
+@article{parker2023dulmage,
+title = {Applications of the {Dulmage–Mendelsohn} decomposition for debugging nonlinear optimization problems},
+journal = {Computers \& Chemical Engineering},
+volume = {178},
+pages = {108383},
+year = {2023},
+issn = {0098-1354},
+doi = {https://doi.org/10.1016/j.compchemeng.2023.108383},
+url = {https://www.sciencedirect.com/science/article/pii/S0098135423002533},
+author = {Robert B. Parker and Bethany L. Nicholson and John D. Siirola and Lorenz T. Biegler},
 }
 ```
