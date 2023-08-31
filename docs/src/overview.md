@@ -53,3 +53,20 @@ you intend to be degrees of freedom, then check the Jacobian of equality
 constraints for singularity. If this Jacobian is nonsingular, the full equality
 Jacobian is full row rank. Otherwise, this assumption may be violated, and
 these algorithms may help deteremine the reason why.
+
+## How can I cite MathProgIncidence?
+If you use MathProgIncidence in your research, we would appreciate you citing
+the following paper:
+```bibtex
+@article{parker2023dulmage,
+title = {Applications of the {Dulmage-Mendelsohn} decomposition for debugging nonlinear optimization problems},
+journal = {Computers \& Chemical Engineering},
+volume = {178},
+pages = {108383},
+year = {2023},
+issn = {0098-1354},
+doi = {https://doi.org/10.1016/j.compchemeng.2023.108383},
+url = {https://www.sciencedirect.com/science/article/pii/S0098135423002533},
+author = {Robert B. Parker and Bethany L. Nicholson and John D. Siirola and Lorenz T. Biegler},
+}
+```
