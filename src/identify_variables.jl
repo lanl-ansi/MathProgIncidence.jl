@@ -28,15 +28,6 @@ import MathOptInterface as MOI
 import MathProgIncidence: get_equality_constraints
 
 
-# TODO: This file implements functions that filter duplicates from the
-# vectors of identified variables. It may be useful at some point to
-# identify variables, preserving duplicates. This can be implemented
-# when/if there is a need.
-#
-# This may be necessary for performant identification of variables in
-# ScalarNonlinearFunction.
-
-
 """
     identify_unique_variables(constraints::Vector)::Vector{JuMP.VariableRef}
 
@@ -215,29 +206,92 @@ end
 
 Return the variables that appear in the provided MathOptInterface function.
 
+No variable will appear more than once.
+
 # Implementation
 Only `ScalarNonlinearFunction`, `ScalarQuadraticFunction`, and
 `ScalarAffineFunction` are supported. This can be changed there is demand for
-other functions. For each type of supported function, the `_get_variable_terms`
-function should be defined. Then, for the type of each term, an additional
-`identify_unique_variables` function should be implemented.
+other functions.
+These methods are implemented by first identifying all variables that
+participate in the function, then filtering out duplicate variables.
 
 """
 function identify_unique_variables(
-    fcn::MOI.ScalarNonlinearFunction
+    fcn::Union{
+        MOI.ScalarAffineFunction,
+        MOI.ScalarQuadraticFunction,
+        MOI.ScalarNonlinearFunction,
+    },
 )::Vector{MOI.VariableIndex}
     variables = _identify_variables(fcn)
     return _filter_duplicates(variables)
 end
 
+# This method is used to handle function-in-set constraints.
+function identify_unique_variables(
+    var::MOI.VariableIndex
+)::Vector{MOI.VariableIndex}
+    return [var]
+end
+
+# NOTE: We will get a MethodError if this is called with a non-vector,
+# non-Affine/Quadratic/Nonlinear function. Should probably implement
+# some default method to catch that.
+function identify_unique_variables(
+    fcn::MOI.AbstractVectorFunction
+)::Vector{MOI.VariableIndex}
+    throw(TypeError(
+        fcn,
+        Union{
+            MOI.ScalarAffineFunction,
+            MOI.ScalarQuadraticFunction,
+            MOI.ScalarNonlinearFunction,
+        },
+        typeof(fcn),
+    ))
+end
+
+"""
+    _identify_variables(fcn)::Vector{JuMP.VariableIndex}
+
+Return all variables that appear in the provided MathOptInterface function.
+
+Duplicates may be present in the resulting vector of variables.
+If there is a use case, these methods can be made public.
+
+# Implementation
+Implemented for `ScalarAffineFunction`, `ScalarQuadraticFunction`, and
+`ScalarNonlinearFunction`. Relies on an underlying _collect_variables!
+method that (potentially recursively) builds up a vector of variables
+in-place.
+
+"""
 function _identify_variables(
-    fcn::MOI.ScalarNonlinearFunction
+    fcn::Union{
+        MOI.ScalarAffineFunction,
+        MOI.ScalarQuadraticFunction,
+        MOI.ScalarNonlinearFunction,
+    },
 )::Vector{MOI.VariableIndex}
     variables = Vector{MOI.VariableIndex}()
     _collect_variables!(variables, fcn)
     return variables
 end
 
+"""
+    _collect_variables!(variables, fcn)::Vector{JuMP.VariableIndex}
+
+Add variables from `fcn` to the `variables` vector
+
+# Implementation
+Implemented for `ScalarAffineFunction`, `ScalarQuadraticFunction`, and
+`ScalarNonlinearFunction`. For affine and quadratic functions, we iterate
+over terms with the `_get_variable_terms` function. For nonlinear functions,
+we recurse until pushing a root node onto the variable stack (or hitting
+an affine/quadratic function). Methods may need to be added if more node types
+are added to `ScalarNonlinearFunction` in the future.
+
+"""
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
     fcn::MOI.ScalarNonlinearFunction,
@@ -260,45 +314,12 @@ function _collect_variables!(
     return variables
 end
 
-# TODO: _identify_variables and identify_unique_variables can probably
-# be combined for all ScalarConstraintFunctions
-function _identify_variables(
-    fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
-)::Vector{MOI.VariableIndex}
-    variables = Vector{MOI.VariableIndex}()
-    _collect_variables!(variables, fcn)
-    return variables
-end
-
-function identify_unique_variables(
-    fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
-)::Vector{MOI.VariableIndex}
-    variables = _identify_variables(fcn)
-    return _filter_duplicates(variables)
-end
-
-function identify_unique_variables(
-    fcn::MOI.AbstractVectorFunction
-)::Vector{MOI.VariableIndex}
-    throw(TypeError(
-        fcn,
-        Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
-        typeof(fcn),
-    ))
-end
-
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
     var::MOI.VariableIndex,
 )::Vector{MOI.VariableIndex}
     push!(variables, var)
     return variables
-end
-
-function identify_unique_variables(
-    var::MOI.VariableIndex
-)::Vector{MOI.VariableIndex}
-    return [var]
 end
 
 function _collect_variables!(
@@ -308,6 +329,21 @@ function _collect_variables!(
     return variables
 end
 
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    term::MOI.ScalarAffineTerm,
+)::Vector{MOI.VariableIndex}
+    push!(variables, term.variable)
+    return variables
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    term::MOI.ScalarQuadraticTerm,
+)::Vector{MOI.VariableIndex}
+    push!(variables, term.variable_1, term.variable_2)
+    return variables
+end
 
 """
     _get_variable_terms(fcn)
@@ -358,22 +394,6 @@ function identify_unique_variables(
     end
 end
 
-function _collect_variables!(
-    variables::Vector{MOI.VariableIndex},
-    term::MOI.ScalarAffineTerm,
-)::Vector{MOI.VariableIndex}
-    push!(variables, term.variable)
-    return variables
-end
-
-function _collect_variables!(
-    variables::Vector{MOI.VariableIndex},
-    term::MOI.ScalarQuadraticTerm,
-)::Vector{MOI.VariableIndex}
-    push!(variables, term.variable_1, term.variable_2)
-    return variables
-end
-
 """
     _filter_duplicates
 
@@ -395,7 +415,6 @@ function _filter_duplicates(
     end
     return filtered
 end
-
 
 function _filter_duplicates(
     variables::Vector{JuMP.VariableRef},
