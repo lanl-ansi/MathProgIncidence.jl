@@ -301,24 +301,6 @@ function identify_unique_variables(
     return [var]
 end
 
-function _identify_variables(var::MOI.VariableIndex)::Vector{MOI.VariableIndex}
-    return [var]
-end
-
-# To support nodes in ScalarNonlinearFunction expression tree
-function identify_unique_variables(var::Float64)::Vector{MOI.VariableIndex}
-    return []
-end
-
-# NOTE that this redundant function could cause some overhead. It may be better
-# to type-check each arg and skip if it not a ScalarAffineFunction,
-# ScalarQuadraticFunction, or ScalarNonlinearFunction.
-function _identify_variables(var::Float64)::Vector{MOI.VariableIndex}
-    return []
-end
-
-# NOTE again that there might be some overhead with calling this no-op function,
-# compared with just skipping these arguments in the ScalarNonlinearFunction method
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
     var::Float64,
@@ -376,13 +358,13 @@ function identify_unique_variables(
     end
 end
 
-function _identify_variables(term::MOI.ScalarAffineTerm)::Vector{MOI.VariableIndex}
-    return [term.variable]
-end
-
-function _identify_variables(term::MOI.ScalarQuadraticTerm)::Vector{MOI.VariableIndex}
-    return [term.variable_1, term.variable_2]
-end
+#function _identify_variables(term::MOI.ScalarAffineTerm)::Vector{MOI.VariableIndex}
+#    return [term.variable]
+#end
+#
+#function _identify_variables(term::MOI.ScalarQuadraticTerm)::Vector{MOI.VariableIndex}
+#    return [term.variable_1, term.variable_2]
+#end
 
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
