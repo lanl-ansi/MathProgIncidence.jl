@@ -29,9 +29,12 @@ import MathProgIncidence: get_equality_constraints
 
 
 # TODO: This file implements functions that filter duplicates from the
-# vectors of identified variables. It may be useful at somepoint to
+# vectors of identified variables. It may be useful at some point to
 # identify variables, preserving duplicates. This can be implemented
 # when/if there is a need.
+#
+# This may be necessary for performant identification of variables in
+# ScalarNonlinearFunction.
 
 
 """
@@ -223,18 +226,40 @@ function should be defined. Then, for the type of each term, an additional
 function identify_unique_variables(
     fcn::MOI.ScalarNonlinearFunction
 )::Vector{MOI.VariableIndex}
+    variables = _identify_variables(fcn)
+    return _filter_duplicates(variables)
+end
+
+function _identify_variables(
+    fcn::MOI.ScalarNonlinearFunction
+)::Vector{MOI.VariableIndex}
     variables = Vector{MOI.VariableIndex}()
     for arg in fcn.args
-        for var in identify_unique_variables(arg)
+        for var in _identify_variables(arg)
             push!(variables, var)
         end
     end
-    return _filter_duplicates(variables)
+    return variables
+end
+
+function _identify_variables(
+    fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
+)::Vector{MOI.VariableIndex}
+    variables = Vector{MOI.VariableIndex}()
+    for terms in _get_variable_terms(fcn)
+        for term in terms
+            for var in _identify_variables(term)
+                push!(variables, var)
+            end
+        end
+    end
+    return variables
 end
 
 function identify_unique_variables(
     fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
 )::Vector{MOI.VariableIndex}
+    # TODO: use _identify_variables
     variables = Vector{MOI.VariableIndex}()
     for terms in _get_variable_terms(fcn)
         for term in terms
@@ -262,8 +287,19 @@ function identify_unique_variables(
     return [var]
 end
 
+function _identify_variables(var::MOI.VariableIndex)::Vector{MOI.VariableIndex}
+    return [var]
+end
+
 # To support nodes in ScalarNonlinearFunction expression tree
 function identify_unique_variables(var::Float64)::Vector{MOI.VariableIndex}
+    return []
+end
+
+# NOTE that this redundant function could cause some overhead. It may be better
+# to type-check each arg and skip if it not a ScalarAffineFunction,
+# ScalarQuadraticFunction, or ScalarNonlinearFunction.
+function _identify_variables(var::Float64)::Vector{MOI.VariableIndex}
     return []
 end
 
@@ -315,6 +351,14 @@ function identify_unique_variables(
     else
         return [term.variable_1, term.variable_2]
     end
+end
+
+function _identify_variables(term::MOI.ScalarAffineTerm)::Vector{MOI.VariableIndex}
+    return [term.variable]
+end
+
+function _identify_variables(term::MOI.ScalarQuadraticTerm)::Vector{MOI.VariableIndex}
+    return [term.variable_1, term.variable_2]
 end
 
 
