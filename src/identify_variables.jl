@@ -234,40 +234,46 @@ function _identify_variables(
     fcn::MOI.ScalarNonlinearFunction
 )::Vector{MOI.VariableIndex}
     variables = Vector{MOI.VariableIndex}()
+    _collect_variables!(variables, fcn)
+    return variables
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    fcn::MOI.ScalarNonlinearFunction,
+)::Vector{MOI.VariableIndex}
     for arg in fcn.args
-        for var in _identify_variables(arg)
-            push!(variables, var)
+        _collect_variables!(variables, arg)
+    end
+    return variables
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
+)::Vector{MOI.VariableIndex}
+    for terms in _get_variable_terms(fcn)
+        for term in terms
+            _collect_variables!(variables, term)
         end
     end
     return variables
 end
 
+# TODO: _identify_variables and identify_unique_variables can probably
+# be combined for all ScalarConstraintFunctions
 function _identify_variables(
     fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
 )::Vector{MOI.VariableIndex}
     variables = Vector{MOI.VariableIndex}()
-    for terms in _get_variable_terms(fcn)
-        for term in terms
-            for var in _identify_variables(term)
-                push!(variables, var)
-            end
-        end
-    end
+    _collect_variables!(variables, fcn)
     return variables
 end
 
 function identify_unique_variables(
     fcn::Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
 )::Vector{MOI.VariableIndex}
-    # TODO: use _identify_variables
-    variables = Vector{MOI.VariableIndex}()
-    for terms in _get_variable_terms(fcn)
-        for term in terms
-            for var in identify_unique_variables(term)
-                push!(variables, var)
-            end
-        end
-    end
+    variables = _identify_variables(fcn)
     return _filter_duplicates(variables)
 end
 
@@ -279,6 +285,14 @@ function identify_unique_variables(
         Union{MOI.ScalarQuadraticFunction, MOI.ScalarAffineFunction},
         typeof(fcn),
     ))
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    var::MOI.VariableIndex,
+)::Vector{MOI.VariableIndex}
+    push!(variables, var)
+    return variables
 end
 
 function identify_unique_variables(
@@ -301,6 +315,15 @@ end
 # ScalarQuadraticFunction, or ScalarNonlinearFunction.
 function _identify_variables(var::Float64)::Vector{MOI.VariableIndex}
     return []
+end
+
+# NOTE again that there might be some overhead with calling this no-op function,
+# compared with just skipping these arguments in the ScalarNonlinearFunction method
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    var::Float64,
+)::Vector{MOI.VariableIndex}
+    return variables
 end
 
 
@@ -361,6 +384,21 @@ function _identify_variables(term::MOI.ScalarQuadraticTerm)::Vector{MOI.Variable
     return [term.variable_1, term.variable_2]
 end
 
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    term::MOI.ScalarAffineTerm,
+)::Vector{MOI.VariableIndex}
+    push!(variables, term.variable)
+    return variables
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
+    term::MOI.ScalarQuadraticTerm,
+)::Vector{MOI.VariableIndex}
+    push!(variables, term.variable_1, term.variable_2)
+    return variables
+end
 
 """
     _filter_duplicates
