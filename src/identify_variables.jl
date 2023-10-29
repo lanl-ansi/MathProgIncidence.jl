@@ -358,14 +358,6 @@ function identify_unique_variables(
     end
 end
 
-#function _identify_variables(term::MOI.ScalarAffineTerm)::Vector{MOI.VariableIndex}
-#    return [term.variable]
-#end
-#
-#function _identify_variables(term::MOI.ScalarQuadraticTerm)::Vector{MOI.VariableIndex}
-#    return [term.variable_1, term.variable_2]
-#end
-
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
     term::MOI.ScalarAffineTerm,
