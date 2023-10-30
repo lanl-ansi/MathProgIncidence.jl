@@ -41,8 +41,8 @@ function _test_igraph_fields(igraph, constraints, variables)
 end
 
 
-function test_construct_interface()
-    m = make_degenerate_flow_model()
+function test_construct_interface(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
 
     variables = [
@@ -70,8 +70,8 @@ function test_construct_interface()
 end
 
 
-function test_construct_interface_rectangular()
-    m = make_degenerate_flow_model()
+function test_construct_interface_rectangular(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.constraint(
         m,
         sum_flow_eqn,
@@ -105,8 +105,8 @@ function test_construct_interface_rectangular()
 end
 
 
-function test_get_adjacent_to_linear_constraint()
-    m = make_degenerate_flow_model()
+function test_get_adjacent_to_linear_constraint(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con = m[:sum_comp_eqn]
     adjacent = MathProgIncidence.get_adjacent(igraph, con)
@@ -115,8 +115,8 @@ function test_get_adjacent_to_linear_constraint()
 end
 
 
-function test_get_adjacent_to_quadratic_constraint()
-    m = make_degenerate_flow_model()
+function test_get_adjacent_to_quadratic_constraint(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con = m[:comp_dens_eqn][1]
     adjacent = MathProgIncidence.get_adjacent(igraph, con)
@@ -125,8 +125,8 @@ function test_get_adjacent_to_quadratic_constraint()
 end
 
 
-function test_get_adjacent_to_nonlinear_constraint()
-    m = make_degenerate_flow_model()
+function test_get_adjacent_to_nonlinear_constraint(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con = m[:bulk_dens_eqn]
     adjacent = MathProgIncidence.get_adjacent(igraph, con)
@@ -135,8 +135,8 @@ function test_get_adjacent_to_nonlinear_constraint()
 end
 
 
-function test_get_adjacent_to_variable()
-    m = make_degenerate_flow_model()
+function test_get_adjacent_to_variable(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     var = m[:x][2]
     adjacent = MathProgIncidence.get_adjacent(igraph, var)
@@ -151,8 +151,8 @@ function test_get_adjacent_to_variable()
 end
 
 
-function test_maximum_matching()
-    m = make_degenerate_flow_model()
+function test_maximum_matching(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     matching = MathProgIncidence.maximum_matching(igraph)
     @test length(matching) == 7
@@ -190,8 +190,8 @@ function test_maximum_matching()
 end
 
 
-function test_dulmage_mendelsohn()
-    m = make_degenerate_flow_model()
+function test_dulmage_mendelsohn(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
     con_undercon = con_dmp.underconstrained
@@ -290,8 +290,8 @@ function test_dulmage_mendelsohn_from_constraints_and_variables()
     return
 end
 
-function test_one_connected_component_igraph()
-    m = make_degenerate_flow_model()
+function test_one_connected_component_igraph(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con_comps, var_comps = MathProgIncidence.connected_components(igraph)
     @test length(var_comps) == 1
@@ -322,8 +322,8 @@ function test_multiple_connected_components_igraph()
     return
 end
 
-function test_one_connected_component_cons_vars()
-    m = make_degenerate_flow_model()
+function test_one_connected_component_cons_vars(model_function=make_degenerate_flow_model)
+    m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
     uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...]
@@ -351,8 +351,8 @@ function test_one_connected_component_cons_vars()
     return
 end
 
-function test_construct_interface_active_inequalities()
-    m = make_simple_model()
+function test_construct_interface_active_inequalities(model_function=make_simple_model)
+    m = model_function()
     JuMP.set_optimizer(m, Ipopt.Optimizer)
     JuMP.optimize!(m)
 
@@ -375,8 +375,8 @@ function test_construct_interface_active_inequalities()
     return
 end
 
-function test_active_inequalities_no_solution()
-    m = make_simple_model()
+function test_active_inequalities_no_solution(model_function=make_simple_model)
+    m = model_function()
     @test_throws(JuMP.OptimizeNotCalled, igraph = MathProgIncidence.IncidenceGraphInterface(
             m, include_active_inequalities = true, tolerance = 1e-6
         )
@@ -384,8 +384,8 @@ function test_active_inequalities_no_solution()
     return
 end
 
-function test_bad_arguments()
-    m = make_simple_model()
+function test_bad_arguments(model_function=make_simple_model)
+    m = model_function()
     @test_throws(ArgumentError, igraph = MathProgIncidence.IncidenceGraphInterface(
             m, include_active_inequalities = true, include_inequality = true
         )
@@ -395,22 +395,40 @@ end
 
 @testset "interface" begin
     test_construct_interface()
+    test_construct_interface(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_construct_interface_rectangular()
+    test_construct_interface_rectangular(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_get_adjacent_to_linear_constraint()
+    test_get_adjacent_to_linear_constraint(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_get_adjacent_to_quadratic_constraint()
+    test_get_adjacent_to_quadratic_constraint(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_get_adjacent_to_nonlinear_constraint()
+    test_get_adjacent_to_nonlinear_constraint(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_get_adjacent_to_variable()
+    test_get_adjacent_to_variable(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_maximum_matching()
+    test_maximum_matching(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_dulmage_mendelsohn()
+    test_dulmage_mendelsohn(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_overconstrained_due_to_fixed_variable()
     test_overconstrained_due_to_including_bound()
     test_interface_from_constraints_and_variables()
     test_matching_from_constraints_and_variables()
     test_dulmage_mendelsohn_from_constraints_and_variables()
-    test_one_connected_component_igraph()
     test_multiple_connected_components_igraph()
+
+    test_one_connected_component_igraph()
+    test_one_connected_component_igraph(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_one_connected_component_cons_vars()
+    test_one_connected_component_cons_vars(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_construct_interface_active_inequalities()
+    test_construct_interface_active_inequalities(make_simple_model_with_ScalarNonlinearFunction)
+
     test_active_inequalities_no_solution()
+    test_active_inequalities_no_solution(make_simple_model_with_ScalarNonlinearFunction)
+
     test_bad_arguments()
+    test_bad_arguments(make_simple_model_with_ScalarNonlinearFunction)
 end

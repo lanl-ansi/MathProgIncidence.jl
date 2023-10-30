@@ -26,8 +26,8 @@ using MathProgIncidence: identify_unique_variables
 # Local import of JuMP models for testing
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 
-function test_linear()
-    m = make_degenerate_flow_model()
+function test_linear(model_function=make_degenerate_flow_model)
+    m = model_function()
     variables = identify_unique_variables(m[:sum_comp_eqn])
     # What is happening when we hash a VariableRef? I.e. how does
     # the model get hashed?
@@ -36,16 +36,16 @@ function test_linear()
     @test(pred_var_set == Set(variables))
 end
 
-function test_quadratic()
-    m = make_degenerate_flow_model()
+function test_quadratic(model_function=make_degenerate_flow_model)
+    m = model_function()
     variables = identify_unique_variables(m[:comp_dens_eqn][1])
     pred_var_set = Set([m[:rho], m[:x][1]])
     @test(length(variables) == length(pred_var_set))
     @test(pred_var_set == Set(variables))
 end
 
-function test_nonlinear()
-    m = make_degenerate_flow_model()
+function test_nonlinear(model_function=make_degenerate_flow_model)
+    m = model_function()
     variables = identify_unique_variables(m[:bulk_dens_eqn])
     pred_var_set = Set([m[:rho], m[:x][1], m[:x][2], m[:x][3]])
     @test(length(variables) == length(pred_var_set))
@@ -61,8 +61,8 @@ function test_nonlinear_with_potential_duplicates()
     @test(Set(variables) == Set([m[:var][1], m[:var][2]]))
 end
 
-function test_several_equalities()
-    m = make_degenerate_flow_model()
+function test_several_equalities(model_function=make_degenerate_flow_model)
+    m = model_function()
     constraints = [m[:comp_flow_eqn][1], m[:sum_comp_eqn], m[:bulk_dens_eqn]]
     variables = identify_unique_variables(constraints)
     pred_var_set = Set([
@@ -72,8 +72,8 @@ function test_several_equalities()
     @test(pred_var_set == Set(variables))
 end
 
-function test_several_constraints_with_ineq()
-    m = make_degenerate_flow_model()
+function test_several_constraints_with_ineq(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.constraint(m, ineq1, m[:flow_comp][2] >= 1.0)
     @JuMP.constraint(m, ineq2, m[:flow_comp][1]^2 + m[:flow_comp][3]^2 <= 1.0)
     constraints = [
@@ -98,8 +98,8 @@ function test_several_constraints_with_ineq()
     @test(pred_var_set == Set(variables))
 end
 
-function test_model()
-    m = make_degenerate_flow_model()
+function test_model(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.variable(m, dummy)
     @JuMP.NLconstraint(m, dummy^3.0 <= 5)
     # Note that include_inequalities=false by default.
@@ -118,8 +118,8 @@ function test_model()
     @test(pred_var_set == Set(variables))
 end
 
-function test_model_with_ineq()
-    m = make_degenerate_flow_model()
+function test_model_with_ineq(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.variable(m, dummy)
     @JuMP.NLconstraint(m, dummy^3.0 <= 5)
     variables = identify_unique_variables(m, include_inequality=true)
@@ -149,8 +149,8 @@ function test_function_with_variable_squared()
     @test(Set(variables) == Set([m[:dummy1].index, m[:dummy2].index]))
 end
 
-function test_model_bad_constr()
-    m = make_degenerate_flow_model()
+function test_model_bad_constr(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.variable(m, dummy[1:2])
     @JuMP.constraint(m, vectorcon, dummy in MOI.Nonnegatives(2))
     @test_throws(
@@ -159,8 +159,8 @@ function test_model_bad_constr()
     )
 end
 
-function test_model_bad_constr_no_ineq()
-    m = make_degenerate_flow_model()
+function test_model_bad_constr_no_ineq(model_function=make_degenerate_flow_model)
+    m = model_function()
     @JuMP.variable(m, dummy[1:2])
     @JuMP.constraint(m, vectorcon, dummy in MOI.Nonnegatives(2))
     # Note that we don't throw an error because we don't attempt to
@@ -208,8 +208,8 @@ function test_two_constraints_same_type()
     @test Set(vars) == pred_var_set
 end
 
-function test_variables_in_inequalities()
-    m = make_simple_model()
+function test_variables_in_inequalities(model_function=make_simple_model)
+    m = model_function()
     @JuMP.variable(m, y >= 1)
     x = m[:x]
     @JuMP.objective(m, Min, x[1] + 2*x[2] + 3*x[3] + y^2)
@@ -224,18 +224,39 @@ end
 
 @testset "get-equality" begin
     test_linear()
+    test_linear(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_quadratic()
+    test_quadratic(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_nonlinear()
+    test_nonlinear(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_nonlinear_with_potential_duplicates()
+
     test_several_equalities()
+    test_several_equalities(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_several_constraints_with_ineq()
+    test_several_constraints_with_ineq(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_model()
+    test_model(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_model_with_ineq()
+    test_model_with_ineq(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_model_bad_constr()
+    test_model_bad_constr(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_model_bad_constr_no_ineq()
+    test_model_bad_constr_no_ineq(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
     test_function_with_variable_squared()
     test_fixing_constraint()
     test_inequality_with_bounds()
     test_two_constraints_same_type()
+
     test_variables_in_inequalities()
+    test_variables_in_inequalities(make_simple_model_with_ScalarNonlinearFunction)
 end
