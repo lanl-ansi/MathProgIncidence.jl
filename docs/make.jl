@@ -38,4 +38,4 @@ makedocs(
     ],
 )
 
-deploydocs(repo = "github.com/lanl-ansi/JuMPIn.jl.git")
+deploydocs(repo = "github.com/lanl-ansi/MathProgIncidence.jl.git")
