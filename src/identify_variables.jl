@@ -29,14 +29,11 @@ import MathProgIncidence: get_equality_constraints
 
 
 """
-    identify_unique_variables(constraints::Vector)::Vector{JuMP.VariableRef}
+    identify_unique_variables(constraints::Vector{JuMP.ConstraintRef})::Vector{JuMP.VariableRef}
 
 Return a vector of variables that participate in the provided constraints.
 
 Each variable appears at most one time in the returned vector.
-If we receive a vector, we just assume it is a vector of constraints.
-This is because I couldn't get an argument of type `Vector{ConstraintRef}`
-to work...
 
 # Example
 ```julia-repl
