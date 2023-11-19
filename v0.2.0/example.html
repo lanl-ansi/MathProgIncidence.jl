@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simple Example · MathProgIncidence</title><meta name="title" content="Simple Example · MathProgIncidence"/><meta property="og:title" content="Simple Example · MathProgIncidence"/><meta property="twitter:title" content="Simple Example · MathProgIncidence"/><meta name="description" content="Documentation for MathProgIncidence."/><meta property="og:description" content="Documentation for MathProgIncidence."/><meta property="twitter:description" content="Documentation for MathProgIncidence."/><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="index.html">MathProgIncidence</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="index.html">Introduction</a></li><li><a class="tocitem" href="overview.html">Overview</a></li><li class="is-active"><a class="tocitem" href="example.html">Simple Example</a><ul class="internal"><li><a class="tocitem" href="#Dulmage-Mendelsohn"><span>Dulmage-Mendelsohn</span></a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="reference/index.html">Reference Outline</a></li><li><a class="tocitem" href="reference/get_equality.html">Identifying equality and inequality constraints</a></li><li><a class="tocitem" href="reference/identify_variables.html">Identifying variables in constraints</a></li><li><a class="tocitem" href="reference/incidence_graph.html">Incidence graph</a></li><li><a class="tocitem" href="reference/interface.html">Algorithm interfaces</a></li><li><a class="tocitem" href="reference/incidence_matrix.html">Incidence matrix</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href="example.html">Simple Example</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="example.html">Simple Example</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/lanl-ansi/MathProgIncidence.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/lanl-ansi/MathProgIncidence.jl/blob/main/docs/src/example.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Simple-Example"><a class="docs-heading-anchor" href="#Simple-Example">Simple Example</a><a id="Simple-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Example" title="Permalink"></a></h1><p>This page walks through a simple example of using the Dulmage-Mendelsohn partition to debug a structural singularity.</p><h2 id="Dulmage-Mendelsohn"><a class="docs-heading-anchor" href="#Dulmage-Mendelsohn">Dulmage-Mendelsohn</a><a id="Dulmage-Mendelsohn-1"></a><a class="docs-heading-anchor-permalink" href="#Dulmage-Mendelsohn" title="Permalink"></a></h2><p>We start with some imports and by creating a JuMP model we are interested in. Usually the model we are interested in debugging is much larger and more complicated than this. This particular system appeared when debugging a dynamic 1-D partial differential-algebraic equation (PDAE) model representing a chemical looping combustion reactor.</p><pre><code class="language-julia hljs">using JuMP
+import MathProgIncidence
+
+m = Model()
+comps = [1, 2, 3]
+@variable(m, x[comps], start=1/3.0)
+@variable(m, flow_comp[comps], start=10.0)
+@variable(m, flow, start=30.0)
+@variable(m, rho, start=1.0)
+
+@constraint(m, sum_comp_eqn, sum(x) == 1)
+@constraint(m, comp_dens_eqn, x*rho .== [1.0, 1.1, 1.2])
+@NLconstraint(m, bulk_dens_eqn, 1/rho - sum(1/x[j] for j in comps) == 0)
+@constraint(m, comp_flow_eqn, x.*flow .== flow_comp)</code></pre><p>To check this model for structural singularity, we apply the Dulmage-Mendelsohn partition.</p><pre><code class="language-julia hljs">igraph = MathProgIncidence.IncidenceGraphInterface(m)
+con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)</code></pre><p>If any variables or constraints are unmatched, the (Jacobian of the) model is structurally singular.</p><pre><code class="language-julia hljs">println(&quot;Unmatched constraints&quot;)
+println(&quot;---------------------&quot;)
+for con in con_dmp.unmatched
+    println(&quot;  $con&quot;)
+end
+println(&quot;Unmatched variables&quot;)
+println(&quot;-------------------&quot;)
+for var in var_dmp.unmatched
+    println(&quot;  $var&quot;)
+end</code></pre><pre><code class="language-console hljs">Unmatched constraints
+---------------------
+(1.0 / rho - (1.0 / x[1] + 1.0 / x[2] + 1.0 / x[3])) - 0.0 = 0
+Unmatched variables
+-------------------
+flow_comp[1]</code></pre><p>This model has one unmatched constraint and one unmatched variable, so it is structurally singular. However, the unmatched constraint and variable are not unique. For example, <code>flow_comp[2]</code> could have been unmatched instead of <code>flow_comp[1]</code>.</p><p>Unique subsets of variables and constraints that are useful when debugging a structural singularity are the underconstrained and overconstrained subsystems. The variables in the underconstrained subsystems are contained in the <code>unmatched</code> and <code>underconstrained</code> fields, while the constraints are contained in the <code>underconstrained</code> field. The variables in the overconstrained subsystem are contained in the <code>overconstrained</code> field, while the constraints are contained in the <code>overconstrained</code> and <code>unmatched</code> fields.</p><p>We now construct the underconstrained and overconstrained subsystems.</p><pre><code class="language-julia hljs">oc_con = cat(con_dmp.overconstrained, con_dmp.unmatched, dims = 1)
+oc_var = var_dmp.overconstrained
+uc_con = con_dmp.underconstrained
+uc_var = cat(var_dmp.unmatched, var_dmp.underconstrained, dims = 1)</code></pre><p>And display the constraints and variables contained in each.</p><pre><code class="language-julia hljs">println(&quot;Overconstrained subsystem&quot;)
+println(&quot;-------------------------&quot;)
+println(&quot;Constraints&quot;)
+for con in oc_con
+    println(&quot;  $con&quot;)
+end
+println(&quot;Variables&quot;)
+for var in oc_var
+    println(&quot;  $var&quot;)
+end
+println()
+
+println(&quot;Underconstrained subsystem&quot;)
+println(&quot;--------------------------&quot;)
+println(&quot;Constraints&quot;)
+for con in uc_con
+    println(&quot;  $con&quot;)
+end
+println(&quot;Variables&quot;)
+for var in uc_var
+    println(&quot;  $var&quot;)
+end</code></pre><pre><code class="language-console hljs">Overconstrained subsystem
+--------------------------
+Constraints
+  sum_comp_eqn : x[1] + x[2] + x[3] = 1.0
+  comp_dens_eqn : x[1]*rho = 1.0
+  comp_dens_eqn : x[2]*rho = 1.1
+  comp_dens_eqn : x[3]*rho = 1.2
+  (1.0 / rho - (1.0 / x[1] + 1.0 / x[2] + 1.0 / x[3])) - 0.0 = 0
+Variables
+  x[1]
+  rho
+  x[2]
+  x[3]
+
+Underconstrained subsystem
+--------------------------
+Constraints
+  comp_flow_eqn : x[1]*flow - flow_comp[1] = 0.0
+  comp_flow_eqn : x[2]*flow - flow_comp[2] = 0.0
+  comp_flow_eqn : x[3]*flow - flow_comp[3] = 0.0
+Variables
+  flow_comp[1]
+  flow
+  flow_comp[2]
+  flow_comp[3]</code></pre><p>At this point we must use our intuition about the system being modeled to identify &quot;what is causing&quot; the singularity. Looking at the under and over-constrained systems, it appears that we are missing an equation to calculate <code>flow</code>, the total flow rate, and that <code>rho</code>, the bulk density, is over-specified as it is computed by both the bulk density equation and one of the component density equations.</p><p>With this knowledge, we can eventually figure out that (a) we need an equation to calculate <code>flow</code> from density, and that (b) our &quot;bulk density equation&quot; is actually a <em>skeletal</em> density equation. Admittedly, this is difficult to figure out without the full context behind this particular system.</p><p>The following script constructs a new version of the model and checks it for structural singularity:</p><pre><code class="language-julia hljs">using JuMP
+import MathProgIncidence
+
+m = Model()
+comps = [1, 2, 3]
+@variable(m, x[comps], start=1/3.0)
+@variable(m, flow_comp[comps], start=10.0)
+@variable(m, flow, start=30.0)
+@variable(m, rho_bulk, start=1.0)
+@variable(m, rho_skel, start=1.0)
+@variable(m, porosity, start=0.25)
+velocity = 1.0
+
+@constraint(m, sum_comp_eqn, sum(x) == 1)
+@constraint(m, comp_dens_eqn, x*rho_bulk .== [1.0, 1.1, 1.2])
+@NLconstraint(m, skel_dens_eqn, 1/rho_skel - sum(1/x[j] for j in comps) == 0)
+@constraint(m, bulk_dens_eqn, rho_bulk == (1 - porosity)*rho_skel)
+@constraint(m, flow_eqn, flow == velocity * rho_bulk)
+@constraint(m, comp_flow_eqn, x.*flow .== flow_comp)
+
+igraph = MathProgIncidence.IncidenceGraphInterface(m)
+con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
+@assert isempty(con_dmp.unmatched) &amp;&amp; isempty(var_dmp.unmatched)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="overview.html">« Overview</a><a class="docs-footer-nextpage" href="reference/index.html">Reference Outline »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.1.2 on <span class="colophon-date" title="Sunday 19 November 2023 21:17">Sunday 19 November 2023</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
