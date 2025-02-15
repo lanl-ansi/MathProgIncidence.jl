@@ -18,7 +18,7 @@
 #  ___________________________________________________________________________
 
 """
-A JuMP interface to the algorithms implemented by JuMPIn
+A JuMP interface to the algorithms implemented by MathProgIncidence
 
 """
 
