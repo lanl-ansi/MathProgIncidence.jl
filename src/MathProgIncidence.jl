@@ -31,6 +31,7 @@ include("incidence_graph.jl")
 # Methods to apply graph algorithms to JuMP models
 include("maximum_matching.jl")
 include("dulmage_mendelsohn.jl")
+include("block_triangularize.jl")
 include("interface.jl")
 
 # Methods to get incidence matrices (as SparseMatrixCSC) from

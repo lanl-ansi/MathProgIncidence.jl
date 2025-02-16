@@ -78,3 +78,12 @@ function make_simple_model_with_ScalarNonlinearFunction()
     JuMP.@constraint(m, range1, 0 <= x[2] + x[3] <= 10)
     return m
 end
+
+function make_decomposable_model()
+    m = JuMP.Model()
+    JuMP.@variable(m, x[1:3] >= 0, start = 1.0)
+    JuMP.@constraint(m, eq1, x[3] + x[2]^2 == 16)
+    JuMP.@constraint(m, eq2, x[1] * x[3]^1.1 == 4)
+    JuMP.@constraint(m, eq3, x[1] + 2*x[3] == 9)
+    return m
+end

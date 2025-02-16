@@ -517,3 +517,24 @@ function connected_components(
     igraph = IncidenceGraphInterface(constraints, variables)
     return connected_components(igraph)
 end
+
+function block_triangularize(igraph::IncidenceGraphInterface)
+    connodeset = Set(values(igraph._con_node_map))
+    ncon = length(igraph._con_node_map)
+    nvar = length(igraph._var_node_map)
+    matching = maximum_matching(igraph._graph, connodeset)
+    nmatch = length(matching)
+    if nvar != ncon || nvar != nmatch
+        @error (
+            "block_triangularize only supports square systems with perfect matchings."
+            * "Got nvar=$nvar, ncon=$ncon, n. matched = $nmatch"
+        )
+    end
+    connode_blocks = block_triangularize(igraph._graph, matching)
+    # node_blocks is a vector of tuples of vectors: [([cons], [vars]),...]
+    blocks = [
+        ([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b])
+        for b in connode_blocks
+    ]
+    return blocks
+end
