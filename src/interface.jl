@@ -538,3 +538,11 @@ function block_triangularize(igraph::IncidenceGraphInterface)
     ]
     return blocks
 end
+
+function block_triangularize(
+    constraints::Vector{<:JuMP.ConstraintRef},
+    variables::Vector{JuMP.VariableRef},
+)
+    igraph = IncidenceGraphInterface(constraints, variables)
+    return block_triangularize(igraph)
+end
