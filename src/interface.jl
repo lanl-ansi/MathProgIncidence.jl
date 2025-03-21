@@ -638,10 +638,10 @@ julia> length(blocks)
 2
 
 julia> for (i, (cb, vb)) in enumerate(blocks)
-           println("Block $i")
+           println("Block \$i")
            println("-------")
            for (c, v) in zip(cb, vb) # cb and vb have the same length
-               println("$v, $c")
+               println("\$v, \$c")
            end
            println()
        end
