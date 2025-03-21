@@ -328,6 +328,13 @@ end
 
 function _collect_variables!(
     variables::Vector{MOI.VariableIndex},
+    var::Int,
+)::Vector{MOI.VariableIndex}
+    return variables
+end
+
+function _collect_variables!(
+    variables::Vector{MOI.VariableIndex},
     term::MOI.ScalarAffineTerm,
 )::Vector{MOI.VariableIndex}
     push!(variables, term.variable)

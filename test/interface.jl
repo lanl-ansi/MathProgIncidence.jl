@@ -393,6 +393,27 @@ function test_bad_arguments(model_function=make_simple_model)
     return
 end
 
+function test_block_triangularize(model_function=make_decomposable_model)
+    m = model_function()
+    igraph = MathProgIncidence.IncidenceGraphInterface(m)
+    blocks = MathProgIncidence.block_triangularize(igraph)
+    function _test_blocks(blocks)
+        @test length(blocks) == 2
+        @test length(blocks[1][1]) == 2
+        @test length(blocks[2][1]) == 1
+        @test Set(blocks[1][1]) == Set([m[:eq2], m[:eq3]])
+        @test Set(blocks[1][2]) == Set([m[:x][1], m[:x][3]])
+        @test blocks[2][1] == [m[:eq1]]
+        @test blocks[2][2] == [m[:x][2]]
+    end
+    _test_blocks(blocks)
+
+    vars = [m[:x][i] for i in 1:3]
+    cons = [m[:eq1], m[:eq2], m[:eq3]]
+    blocks = MathProgIncidence.block_triangularize(cons, vars)
+    _test_blocks(blocks)
+end
+
 @testset "interface" begin
     test_construct_interface()
     test_construct_interface(make_degenerate_flow_model_with_ScalarNonlinearFunction)
@@ -410,6 +431,10 @@ end
     test_maximum_matching(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_dulmage_mendelsohn()
     test_dulmage_mendelsohn(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
+    @testset "block-triangularize" begin
+        test_block_triangularize()
+    end
 
     test_overconstrained_due_to_fixed_variable()
     test_overconstrained_due_to_including_bound()
