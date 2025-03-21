@@ -48,7 +48,7 @@ function _get_oriented_projection(graph, matching)
     return digraph
 end
 
-function block_triangularize(graph::Graphs.Graph, matching::Dict{Int, Int})
+function _block_triangularize(graph::Graphs.Graph, matching::Dict{Int, Int})
     # TODO: Make sure (a) graph is bipartite and (b) matching is perfect
     # digraph is a new graph. If we ever have to relabel vertices to correspond to
     # Graphs.jl's convention, we'll have to return some mapping to help us get the
@@ -57,5 +57,9 @@ function block_triangularize(graph::Graphs.Graph, matching::Dict{Int, Int})
     sccs = Graphs.strongly_connected_components_tarjan(digraph)
     # From the Graphs.jl documentation (https://juliagraphs.org/Graphs.jl/stable/algorithms/connectivity/#Graphs.strongly_connected_components-Tuple{Any}),
     # "returned components will be ordered reverse topologically"
+    #
+    # If this changes, we can explicitly order the SCCs with:
+    # dag = Graphs.condensation(digraph, sccs)
+    # sccs = [sccs[i] for i in reverse(Graphs.topological_sort(dag))]
     return sccs
 end

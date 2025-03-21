@@ -518,7 +518,66 @@ function connected_components(
     return connected_components(igraph)
 end
 
-function block_triangularize(igraph::IncidenceGraphInterface)
+"""
+    block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
+
+Return an ordered partition of constraints and variables that puts the incidence
+matrix into block-lower triangular form.
+
+The subsets of the partition correspond to diagonal blocks of the incidence matrix.
+These subsets are strongly connected components of a directed version of the bipartite
+incidence graph and have the strong Hall property (are irreducible). The
+block-triangular ordering of these subsets corresponds to a topological order of the
+directed acyclic graph of strongly connected components.
+
+The return type is a vector of tuples of vectors of constraints and variables.
+
+!!! warning
+    This is a slightly different return type than the `connected_components` method.
+    One or both of these APIs may change in the future for consistency.
+
+# Example
+```julia-repl
+julia> using JuMP; import MathProgIncidence as MPIN
+
+julia> m = Model(); @variable(m, x[1:3] >= 0);
+
+julia> c1 = @constraint(m, x[1] + x[2]^2 + x[3]^3 == 4);
+
+julia> c2 = @constraint(m, x[1] + x[3] == 1);
+
+julia> c3 = @constraint(m, x[1] * x[3]^0.5 == 3);
+
+julia> igraph = MPIN.IncidenceGraphInterface(m);
+
+julia> blocks = MPIN.block_triangularize(igraph);
+
+julia> length(blocks)
+2
+
+julia> for (i, (cb, vb)) in enumerate(blocks)
+           println()
+           println("Block \$i")
+           println("-------")
+           for (c, v) in zip(cb, vb) # cb and vb have the same length
+               println("\$v, \$c")
+           end
+       end
+
+Block 1
+-------
+x[1], (x[1] * (x[3] ^ 0.5)) - 3.0 = 0
+x[3], x[1] + x[3] = 1
+
+Block 2
+-------
+x[2], ((x[2]² + x[1]) + (x[3] ^ 3.0)) - 4.0 = 0
+
+```
+"""
+function block_triangularize(
+    igraph::IncidenceGraphInterface
+)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
     connodeset = Set(values(igraph._con_node_map))
     ncon = length(igraph._con_node_map)
     nvar = length(igraph._var_node_map)
@@ -530,7 +589,7 @@ function block_triangularize(igraph::IncidenceGraphInterface)
             * "Got nvar=$nvar, ncon=$ncon, n. matched = $nmatch"
         )
     end
-    connode_blocks = block_triangularize(igraph._graph, matching)
+    connode_blocks = _block_triangularize(igraph._graph, matching)
     # node_blocks is a vector of tuples of vectors: [([cons], [vars]),...]
     blocks = [
         ([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b])
@@ -539,10 +598,67 @@ function block_triangularize(igraph::IncidenceGraphInterface)
     return blocks
 end
 
+"""
+    block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
+
+Return an ordered partition of constraints and variables that puts the incidence
+matrix into block-lower triangular form.
+
+This method accepts constraints and variables and is useful for performing the
+block-triangular decomposition on the well-constrained subsystem from the
+Dulmage-Mendelsohn decomposition.
+
+The return type is a vector of tuples of vectors of constraints and variables.
+
+!!! warning
+    This is a slightly different return type than the `connected_components` method.
+    One or both of these APIs may change in the future for consistency.
+
+# Example
+```julia-repl
+julia> using JuMP; import MathProgIncidence as MPIN
+
+julia> m = Model(); @variable(m, x[1:5] >= 0);
+
+julia> c1 = @constraint(m, x[1] + x[2]^2 + x[3]^3 + x[4]^4 +x[5]^5 == 5);
+
+julia> c2 = @constraint(m, x[1] == 1);
+
+julia> c3 = @constraint(m, x[1] * x[3]^0.5 == 3);
+
+julia> c4 = @constraint(m, x[1] - x[2] + x[3] - x[4] == 10);
+
+julia> igraph = MPIN.IncidenceGraphInterface(m);
+
+julia> cdmp, vdmp = MPIN.dulmage_mendelsohn(igraph);
+
+julia> blocks = MPIN.block_triangularize(cdmp.square, vdmp.square);
+
+julia> length(blocks)
+2
+
+julia> for (i, (cb, vb)) in enumerate(blocks)
+           println("Block $i")
+           println("-------")
+           for (c, v) in zip(cb, vb) # cb and vb have the same length
+               println("$v, $c")
+           end
+           println()
+       end
+Block 1
+-------
+x[1], x[1] = 1
+
+Block 2
+-------
+x[3], (x[1] * (x[3] ^ 0.5)) - 3.0 = 0
+
+```
+"""
 function block_triangularize(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)
+)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
     igraph = IncidenceGraphInterface(constraints, variables)
     return block_triangularize(igraph)
 end
