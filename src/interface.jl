@@ -522,7 +522,12 @@ end
     block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
 
 Return an ordered partition of constraints and variables that puts the incidence
-matrix into block-lower triangular form.
+matrix into block-*lower* triangular form.
+
+The provided constraints and variables must be well-determined. That is, a maximum
+matching must cover all constraints and variables provided.
+
+The return type is a vector of tuples of vectors of constraints and variables.
 
 The subsets of the partition correspond to diagonal blocks of the incidence matrix.
 These subsets are strongly connected components of a directed version of the bipartite
@@ -530,10 +535,14 @@ incidence graph and have the strong Hall property (are irreducible). The
 block-triangular ordering of these subsets corresponds to a topological order of the
 directed acyclic graph of strongly connected components.
 
-The return type is a vector of tuples of vectors of constraints and variables.
+Re-ordering the constraints and variables into the order given will yield an incidence
+matrix that is block-*lower* triangular. As with all incidence matrices in this package,
+rows correspond to constraints and columns correspond to variables. This means that
+the subsets are provided in a topological order of the precedence graph, where each
+subset only uses the variables of those that precede it (as well as its own variables).
 
 !!! warning
-    This is a slightly different return type than the `connected_components` method.
+    This is a slightly different return type than the [`connected_components`](@ref) method.
     One or both of these APIs may change in the future for consistency.
 
 # Example
@@ -573,6 +582,20 @@ Block 2
 -------
 x[2], ((x[2]² + x[1]) + (x[3] ^ 3.0)) - 4.0 = 0
 
+
+julia> corder = JuMP.ConstraintRef[]; vorder = JuMP.VariableRef[];
+
+julia> for (cb, vb) in blocks
+           append!(corder, cb)
+           append!(vorder, vb)
+       end
+
+julia> MPIN.incidence_matrix(corder, vorder)
+3×3 SparseArrays.SparseMatrixCSC{Float64, Int64} with 7 stored entries:
+ 1.0  1.0   ⋅
+ 1.0  1.0   ⋅
+ 1.0  1.0  1.0
+
 ```
 """
 function block_triangularize(
@@ -611,7 +634,7 @@ from the Dulmage-Mendelsohn decomposition.
 The return type is a vector of tuples of vectors of constraints and variables.
 
 !!! warning
-    This is a slightly different return type than the `connected_components` method.
+    This is a slightly different return type than the [`connected_components`](@ref) method.
     One or both of these APIs may change in the future for consistency.
 
 # Example
