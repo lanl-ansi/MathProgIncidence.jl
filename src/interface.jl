@@ -599,14 +599,14 @@ function block_triangularize(
 end
 
 """
-    block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
+    block_triangularize(constraints, variables)::Vector{Tuple{Vector, Vector}}
 
 Return an ordered partition of constraints and variables that puts the incidence
 matrix into block-lower triangular form.
 
-This method accepts constraints and variables and is useful for performing the
-block-triangular decomposition on the well-constrained subsystem from the
-Dulmage-Mendelsohn decomposition.
+This method accepts vectors of constraints and variables and is useful for
+performing the block-triangular decomposition on the well-constrained subsystem
+from the Dulmage-Mendelsohn decomposition.
 
 The return type is a vector of tuples of vectors of constraints and variables.
 
