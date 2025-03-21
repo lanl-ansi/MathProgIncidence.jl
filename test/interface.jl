@@ -397,13 +397,21 @@ function test_block_triangularize(model_function=make_decomposable_model)
     m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     blocks = MathProgIncidence.block_triangularize(igraph)
-    @test length(blocks) == 2
-    @test length(blocks[1][1]) == 2
-    @test length(blocks[2][1]) == 1
-    @test Set(blocks[1][1]) == Set([m[:eq2], m[:eq3]])
-    @test Set(blocks[1][2]) == Set([m[:x][1], m[:x][3]])
-    @test blocks[2][1] == [m[:eq1]]
-    @test blocks[2][2] == [m[:x][2]]
+    function _test_blocks(blocks)
+        @test length(blocks) == 2
+        @test length(blocks[1][1]) == 2
+        @test length(blocks[2][1]) == 1
+        @test Set(blocks[1][1]) == Set([m[:eq2], m[:eq3]])
+        @test Set(blocks[1][2]) == Set([m[:x][1], m[:x][3]])
+        @test blocks[2][1] == [m[:eq1]]
+        @test blocks[2][2] == [m[:x][2]]
+    end
+    _test_blocks(blocks)
+
+    vars = [m[:x][i] for i in 1:3]
+    cons = [m[:eq1], m[:eq2], m[:eq3]]
+    blocks = MathProgIncidence.block_triangularize(cons, vars)
+    _test_blocks(blocks)
 end
 
 @testset "interface" begin
