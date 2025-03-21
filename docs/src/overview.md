@@ -30,6 +30,8 @@ of restoration iterations in interior point methods.
 
 ## What algorithms does MathProgIncidence implement?
 1. The **Dulmage-Mendelsohn partition**, which detects subsets of variables and constraints causing a structural singularity. See [`MathProgIncidence.dulmage_mendelsohn`](@ref).
+2. Partition-by-**connected components**, which detects subsets of variables and constraints that are entirely independent. See [`MathProgIncidence.connected_components`](@ref).
+3. A **block-lower triangular partition**, which identifies "sequentially-dependent" subsystems of a well-determined system. See [`MathProgIncidence.block_triangularize`](@ref).
 More algorithms may be implemented in the future.
 
 ## What models should these be applied to?
