@@ -33,7 +33,7 @@ function _get_oriented_projection(graph, matching)
         elseif v in keys(matching)
             a, b = v, u
         else
-            @error "We should never get here. Contact the MathProgIncidence.jl developers."
+            error("We should never get here. Contact the MathProgIncidence.jl developers.")
         end
         bpair = inv_matching[b]
         if a != bpair
