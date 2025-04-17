@@ -27,6 +27,7 @@ import JuMP
 import MathProgIncidence: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
 import Graphs
+import SparseArrays
 
 """
 Utility function to convert a tuple of nodes and edges into a
@@ -147,6 +148,13 @@ IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)
 )
 
+function IncidenceGraphInterface(matrix::SparseArrays.SparseMatrixCSC)
+    graph, row_node_map, col_node_map = get_bipartite_incidence_graph(matrix)
+    graph = _tuple_to_graphs_jl(graph)
+    nodes = _maps_to_nodes(row_node_map, col_node_map)
+    return IncidenceGraphInterface(graph, row_node_map, col_node_map, nodes)
+end
+
 """
     get_adjacent(
         igraph::IncidenceGraphInterface,
@@ -245,7 +253,7 @@ Dict{ConstraintRef, VariableRef} with 2 entries:
 """
 function maximum_matching(
     igraph::IncidenceGraphInterface
-)::Dict{JuMP.ConstraintRef, JuMP.VariableRef}
+)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon) # Relying on graph convention here.
@@ -381,7 +389,7 @@ julia> # As there are no unmatched constraints, the overconstrained subsystem is
 """
 function dulmage_mendelsohn(
     igraph::IncidenceGraphInterface
-)::Tuple{DMConPartition, DMVarPartition}
+)
     ncon = length(igraph._con_node_map)
     con_node_set = Set(1:ncon)
     con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
@@ -454,7 +462,7 @@ julia> var_comps
 """
 function connected_components(
     igraph::IncidenceGraphInterface
-)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+)
     comps = Graphs.connected_components(igraph._graph)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
@@ -600,7 +608,7 @@ julia> MPIN.incidence_matrix(corder, vorder)
 """
 function block_triangularize(
     igraph::IncidenceGraphInterface
-)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
+)
     connodeset = Set(values(igraph._con_node_map))
     ncon = length(igraph._con_node_map)
     nvar = length(igraph._var_node_map)
