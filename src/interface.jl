@@ -467,9 +467,15 @@ function connected_components(
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon)
+    # TODO: Sort components?
     con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
     var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
     return con_comps, var_comps
+end
+
+function connected_components(csc::SparseArrays.SparseMatrixCSC)
+    igraph = IncidenceGraphInterface(csc)
+    return connected_components(igraph)
 end
 
 """
