@@ -21,6 +21,7 @@ using Test: @test, @test_throws, @testset
 import JuMP
 import Ipopt
 import MathProgIncidence
+import SparseArrays: sparse
 
 include("models.jl") # make_degenerate_flow_model, make_simple_model
 
@@ -150,70 +151,116 @@ function test_get_adjacent_to_variable(model_function=make_degenerate_flow_model
     return nothing
 end
 
-
 function test_maximum_matching(model_function=make_degenerate_flow_model)
     m = model_function()
+    function _test_matching(matching)
+        @test length(matching) == 7
+        for (con, var) in matching
+            @test typeof(con) <: JuMP.ConstraintRef
+            @test typeof(var) <: JuMP.VariableRef
+            @test var in Set(MathProgIncidence.get_adjacent(igraph, con))
+            @test con in Set(MathProgIncidence.get_adjacent(igraph, var))
+        end
+        possibly_unmatched_vars = Set([
+            m[:flow_comp][1],
+            m[:flow_comp][2],
+            m[:flow_comp][3],
+            m[:flow],
+        ])
+        possibly_unmatched_cons = Set([
+            m[:comp_dens_eqn][1],
+            m[:comp_dens_eqn][2],
+            m[:comp_dens_eqn][3],
+            m[:bulk_dens_eqn],
+            m[:sum_comp_eqn],
+        ])
+        for con in keys(igraph._con_node_map)
+            if !(con in keys(matching))
+                @test con in possibly_unmatched_cons
+            end
+        end
+        matched_var_set = Set(values(matching))
+        for var in keys(igraph._var_node_map)
+            if !(var in matched_var_set)
+                @test var in possibly_unmatched_vars
+            end
+        end
+    end
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     matching = MathProgIncidence.maximum_matching(igraph)
-    @test length(matching) == 7
-    for (con, var) in matching
-        @test typeof(con) <: JuMP.ConstraintRef
-        @test typeof(var) <: JuMP.VariableRef
-        @test var in Set(MathProgIncidence.get_adjacent(igraph, con))
-        @test con in Set(MathProgIncidence.get_adjacent(igraph, var))
-    end
-    possibly_unmatched_vars = Set([
-        m[:flow_comp][1],
-        m[:flow_comp][2],
-        m[:flow_comp][3],
-        m[:flow],
-    ])
-    possibly_unmatched_cons = Set([
-        m[:comp_dens_eqn][1],
-        m[:comp_dens_eqn][2],
-        m[:comp_dens_eqn][3],
-        m[:bulk_dens_eqn],
-        m[:sum_comp_eqn],
-    ])
-    for con in keys(igraph._con_node_map)
-        if !(con in keys(matching))
-            @test con in possibly_unmatched_cons
-        end
-    end
-    matched_var_set = Set(values(matching))
-    for var in keys(igraph._var_node_map)
-        if !(var in matched_var_set)
-            @test var in possibly_unmatched_vars
-        end
-    end
+    _test_matching(matching)
+    matching = MathProgIncidence.maximum_matching(m)
+    _test_matching(matching)
     return nothing
 end
 
+function test_maximum_matching_matrix()
+    # Test dense matrix
+    matrix = [
+        0 1 0;
+        0 0 1;
+        1 0 0;
+    ]
+    matching = MathProgIncidence.maximum_matching(matrix)
+    @test matching == Dict(1 => 2, 2 => 3, 3 => 1)
+    # Test sparse matrix
+    matrix = sparse(matrix)
+    matching = MathProgIncidence.maximum_matching(matrix)
+    @test matching == Dict(1 => 2, 2 => 3, 3 => 1)
+    return nothing
+end
 
 function test_dulmage_mendelsohn(model_function=make_degenerate_flow_model)
     m = model_function()
+    function _test_dm(con_dmp, var_dmp)
+        con_undercon = con_dmp.underconstrained
+        con_overcon = cat(con_dmp.overconstrained, con_dmp.unmatched, dims=1)
+        @test Set(con_undercon) == Set([
+            m[:comp_flow_eqn][1], m[:comp_flow_eqn][2], m[:comp_flow_eqn][3]
+        ])
+        @test Set(con_overcon) == Set([
+            m[:comp_dens_eqn][1],
+            m[:comp_dens_eqn][2],
+            m[:comp_dens_eqn][3],
+            m[:bulk_dens_eqn],
+            m[:sum_comp_eqn],
+        ])
+        @test con_dmp.square == []
+        var_undercon = cat(var_dmp.underconstrained, var_dmp.unmatched, dims=1)
+        var_overcon = var_dmp.overconstrained
+        @test Set(var_undercon) == Set([
+            m[:flow_comp][1], m[:flow_comp][2], m[:flow_comp][3], m[:flow]
+        ])
+        @test Set(var_overcon) == Set([m[:x][1], m[:x][2], m[:x][3], m[:rho]])
+        @test var_dmp.square == []
+    end
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(igraph)
-    con_undercon = con_dmp.underconstrained
-    con_overcon = cat(con_dmp.overconstrained, con_dmp.unmatched, dims=1)
-    @test Set(con_undercon) == Set([
-        m[:comp_flow_eqn][1], m[:comp_flow_eqn][2], m[:comp_flow_eqn][3]
-    ])
-    @test Set(con_overcon) == Set([
-        m[:comp_dens_eqn][1],
-        m[:comp_dens_eqn][2],
-        m[:comp_dens_eqn][3],
-        m[:bulk_dens_eqn],
-        m[:sum_comp_eqn],
-    ])
-    @test con_dmp.square == []
-    var_undercon = cat(var_dmp.underconstrained, var_dmp.unmatched, dims=1)
-    var_overcon = var_dmp.overconstrained
-    @test Set(var_undercon) == Set([
-        m[:flow_comp][1], m[:flow_comp][2], m[:flow_comp][3], m[:flow]
-    ])
-    @test Set(var_overcon) == Set([m[:x][1], m[:x][2], m[:x][3], m[:rho]])
-    @test var_dmp.square == []
+    _test_dm(con_dmp, var_dmp)
+    con_dmp, var_dmp = MathProgIncidence.dulmage_mendelsohn(m)
+    _test_dm(con_dmp, var_dmp)
+    return nothing
+end
+
+function test_dulmage_mendelsohn_matrix()
+    matrix = [
+        1 1 0 1;
+        0 0 1 0;
+        0 0 0 1;
+        0 0 0 1;
+    ]
+    function _test_dm(rowdm, coldm)
+        @test rowdm.underconstrained == [1]
+        @test rowdm.square == [2]
+        @test sort(vcat(rowdm.overconstrained, rowdm.unmatched)) == [3, 4]
+        @test coldm.square == [3]
+        @test sort(vcat(coldm.underconstrained, coldm.unmatched)) == [1, 2]
+        @test coldm.overconstrained == [4]
+    end
+    rowdm, coldm = MathProgIncidence.dulmage_mendelsohn(matrix)
+    _test_dm(rowdm, coldm)
+    rowdm, coldm = MathProgIncidence.dulmage_mendelsohn(sparse(matrix))
+    _test_dm(rowdm, coldm)
     return nothing
 end
 
@@ -308,17 +355,22 @@ function test_multiple_connected_components_igraph()
     JuMP.@constraint(m, eq1, x[1] + x[3]^2 == 2)
     JuMP.@constraint(m, eq2, x[2] + x[4]^2 == 4)
     JuMP.@constraint(m, eq3, x[5] == 7)
+    function _test_cc(concc, varcc)
+        predicted_comps = Set(
+            [Set([x[1], x[3], eq1]), Set([x[2], x[4], eq2]), Set([x[5], eq3])]
+        )
+        @test length(var_comps) == 3
+        @test length(con_comps) == 3
+        for i in 1:3
+            comp = Set(cat(var_comps[i], con_comps[i], dims = 1))
+            @test comp in predicted_comps
+        end
+    end
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     con_comps, var_comps = MathProgIncidence.connected_components(igraph)
-    predicted_comps = Set(
-        [Set([x[1], x[3], eq1]), Set([x[2], x[4], eq2]), Set([x[5], eq3])]
-    )
-    @test length(var_comps) == 3
-    @test length(con_comps) == 3
-    for i in 1:3
-        comp = Set(cat(var_comps[i], con_comps[i], dims = 1))
-        @test comp in predicted_comps
-    end
+    _test_cc(con_comps, var_comps)
+    con_comps, var_comps = MathProgIncidence.connected_components(m)
+    _test_cc(con_comps, var_comps)
     return
 end
 
@@ -349,6 +401,26 @@ function test_one_connected_component_cons_vars(model_function=make_degenerate_f
     @test Set(uc_var_comps[1]) == Set([flow_comp..., flow])
     @test Set(oc_var_comps[1]) == Set([x..., rho])
     return
+end
+
+function test_connected_components_matrix()
+    matrix = [
+        1 0 1;
+        1 0 1;
+        0 1 0;
+    ]
+    function _test_cc(rowcc, colcc)
+        # Put components in deterministic order
+        rowcc = sort(map(sort, rowcc))
+        colcc = sort(map(sort, colcc))
+        @test rowcc == [[1, 2], [3]]
+        @test colcc == [[1, 3], [2]]
+    end
+    rowcc, colcc = MathProgIncidence.connected_components(matrix)
+    _test_cc(rowcc, colcc)
+    rowcc, colcc = MathProgIncidence.connected_components(sparse(matrix))
+    _test_cc(rowcc, colcc)
+    return nothing
 end
 
 function test_construct_interface_active_inequalities(model_function=make_simple_model)
@@ -396,7 +468,6 @@ end
 function test_block_triangularize(model_function=make_decomposable_model)
     m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
-    blocks = MathProgIncidence.block_triangularize(igraph)
     function _test_blocks(blocks)
         @test length(blocks) == 2
         @test length(blocks[1][1]) == 2
@@ -406,12 +477,32 @@ function test_block_triangularize(model_function=make_decomposable_model)
         @test blocks[2][1] == [m[:eq1]]
         @test blocks[2][2] == [m[:x][2]]
     end
+    blocks = MathProgIncidence.block_triangularize(igraph)
     _test_blocks(blocks)
-
     vars = [m[:x][i] for i in 1:3]
     cons = [m[:eq1], m[:eq2], m[:eq3]]
     blocks = MathProgIncidence.block_triangularize(cons, vars)
     _test_blocks(blocks)
+    blocks = MathProgIncidence.block_triangularize(m)
+    _test_blocks(blocks)
+end
+
+function test_block_triangularize_matrix()
+    matrix = [
+        1 0 1;
+        1 1 1;
+        0 1 0;
+    ]
+    function _test_blocks(block)
+        @test blocks[1] == ([3], [2])
+        @test Set(blocks[2][1]) == Set([1, 2])
+        @test Set(blocks[2][2]) == Set([1, 3])
+    end
+    blocks = MathProgIncidence.block_triangularize(matrix)
+    _test_blocks(blocks)
+    blocks = MathProgIncidence.block_triangularize(sparse(matrix))
+    _test_blocks(blocks)
+    return
 end
 
 @testset "interface" begin
@@ -427,26 +518,38 @@ end
     test_get_adjacent_to_nonlinear_constraint(make_degenerate_flow_model_with_ScalarNonlinearFunction)
     test_get_adjacent_to_variable()
     test_get_adjacent_to_variable(make_degenerate_flow_model_with_ScalarNonlinearFunction)
-    test_maximum_matching()
-    test_maximum_matching(make_degenerate_flow_model_with_ScalarNonlinearFunction)
-    test_dulmage_mendelsohn()
-    test_dulmage_mendelsohn(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+
+    @testset "maximum-matching" begin
+        test_maximum_matching()
+        test_maximum_matching(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+        test_maximum_matching_matrix()
+        test_matching_from_constraints_and_variables()
+    end
+
+    @testset "dulmage-mendelsohn" begin
+        test_dulmage_mendelsohn()
+        test_dulmage_mendelsohn(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+        test_dulmage_mendelsohn_matrix()
+        test_overconstrained_due_to_fixed_variable()
+        test_overconstrained_due_to_including_bound()
+        test_dulmage_mendelsohn_from_constraints_and_variables()
+    end
 
     @testset "block-triangularize" begin
         test_block_triangularize()
+        test_block_triangularize_matrix()
     end
 
-    test_overconstrained_due_to_fixed_variable()
-    test_overconstrained_due_to_including_bound()
     test_interface_from_constraints_and_variables()
-    test_matching_from_constraints_and_variables()
-    test_dulmage_mendelsohn_from_constraints_and_variables()
-    test_multiple_connected_components_igraph()
 
-    test_one_connected_component_igraph()
-    test_one_connected_component_igraph(make_degenerate_flow_model_with_ScalarNonlinearFunction)
-    test_one_connected_component_cons_vars()
-    test_one_connected_component_cons_vars(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+    @testset "connected-components" begin
+        test_multiple_connected_components_igraph()
+        test_one_connected_component_igraph()
+        test_one_connected_component_igraph(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+        test_one_connected_component_cons_vars()
+        test_one_connected_component_cons_vars(make_degenerate_flow_model_with_ScalarNonlinearFunction)
+        test_connected_components_matrix()
+    end
 
     test_construct_interface_active_inequalities()
     test_construct_interface_active_inequalities(make_simple_model_with_ScalarNonlinearFunction)
