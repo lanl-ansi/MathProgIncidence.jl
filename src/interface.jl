@@ -27,6 +27,7 @@ import JuMP
 import MathProgIncidence: get_bipartite_incidence_graph, maximum_matching, GraphDataTuple
 
 import Graphs
+import SparseArrays: SparseMatrixCSC, sparse
 
 """
 Utility function to convert a tuple of nodes and edges into a
@@ -147,6 +148,15 @@ IncidenceGraphInterface(
     get_bipartite_incidence_graph(constraints, variables)
 )
 
+function IncidenceGraphInterface(matrix::SparseMatrixCSC)
+    graph, row_node_map, col_node_map = get_bipartite_incidence_graph(matrix)
+    graph = _tuple_to_graphs_jl(graph)
+    nodes = _maps_to_nodes(row_node_map, col_node_map)
+    return IncidenceGraphInterface(graph, row_node_map, col_node_map, nodes)
+end
+
+IncidenceGraphInterface(matrix::Matrix) = IncidenceGraphInterface(sparse(matrix))
+
 """
     get_adjacent(
         igraph::IncidenceGraphInterface,
@@ -245,7 +255,7 @@ Dict{ConstraintRef, VariableRef} with 2 entries:
 """
 function maximum_matching(
     igraph::IncidenceGraphInterface
-)::Dict{JuMP.ConstraintRef, JuMP.VariableRef}
+)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon) # Relying on graph convention here.
@@ -255,6 +265,9 @@ function maximum_matching(
     return jump_matching
 end
 
+maximum_matching(model::JuMP.Model) = maximum_matching(IncidenceGraphInterface(model))
+maximum_matching(matrix::SparseMatrixCSC) = maximum_matching(IncidenceGraphInterface(matrix))
+maximum_matching(matrix::Matrix) = maximum_matching(IncidenceGraphInterface(matrix))
 
 function maximum_matching(
     constraints::Vector{<:JuMP.ConstraintRef},
@@ -381,7 +394,7 @@ julia> # As there are no unmatched constraints, the overconstrained subsystem is
 """
 function dulmage_mendelsohn(
     igraph::IncidenceGraphInterface
-)::Tuple{DMConPartition, DMVarPartition}
+)
     ncon = length(igraph._con_node_map)
     con_node_set = Set(1:ncon)
     con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
@@ -410,6 +423,10 @@ function dulmage_mendelsohn(
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end
+
+dulmage_mendelsohn(model::JuMP.Model) = dulmage_mendelsohn(IncidenceGraphInterface(model))
+dulmage_mendelsohn(matrix::SparseMatrixCSC) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
+dulmage_mendelsohn(matrix::Matrix) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 
 """
     connected_components(igraph::IncidenceGraphInterface)
@@ -454,15 +471,18 @@ julia> var_comps
 """
 function connected_components(
     igraph::IncidenceGraphInterface
-)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+)
     comps = Graphs.connected_components(igraph._graph)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
     con_node_set = Set(1:ncon)
+    # TODO: Sort components?
     con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
     var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
     return con_comps, var_comps
 end
+
+
 
 """
     connected_components(constraints, variables)
@@ -517,6 +537,10 @@ function connected_components(
     igraph = IncidenceGraphInterface(constraints, variables)
     return connected_components(igraph)
 end
+
+connected_components(model::JuMP.Model) = connected_components(IncidenceGraphInterface(model))
+connected_components(matrix::SparseMatrixCSC) = connected_components(IncidenceGraphInterface(matrix))
+connected_components(matrix::Matrix) = connected_components(IncidenceGraphInterface(matrix))
 
 """
     block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
@@ -600,7 +624,7 @@ julia> MPIN.incidence_matrix(corder, vorder)
 """
 function block_triangularize(
     igraph::IncidenceGraphInterface
-)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
+)
     connodeset = Set(values(igraph._con_node_map))
     ncon = length(igraph._con_node_map)
     nvar = length(igraph._var_node_map)
@@ -685,3 +709,7 @@ function block_triangularize(
     igraph = IncidenceGraphInterface(constraints, variables)
     return block_triangularize(igraph)
 end
+
+block_triangularize(model::JuMP.Model) = block_triangularize(IncidenceGraphInterface(model))
+block_triangularize(matrix::SparseMatrixCSC) = block_triangularize(IncidenceGraphInterface(matrix))
+block_triangularize(matrix::Matrix) = block_triangularize(IncidenceGraphInterface(matrix))
