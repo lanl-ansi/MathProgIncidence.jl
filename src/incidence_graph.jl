@@ -24,6 +24,7 @@ variables.
 """
 
 import JuMP
+import SparseArrays
 
 import MathProgIncidence: get_equality_constraints, identify_unique_variables
 
@@ -181,4 +182,23 @@ function get_bipartite_incidence_graph(
     # than vectors of var/con nodes, as the calling functions won't necessarily
     # have ordered vectors of constraints and variables.
     return graph, con_node_map, var_node_map
+end
+
+function get_bipartite_incidence_graph(matrix::SparseArrays.SparseMatrixCSC)
+    nrow = matrix.m
+    ncol = matrix.n
+    row_nodes = Vector(1:nrow)
+    col_nodes = Vector((nrow+1):(nrow+ncol))
+    row_node_map = Dict(zip(1:nrow, row_nodes))
+    col_node_map = Dict(zip(1:ncol, col_nodes))
+    edges = Tuple{Int, Int}[]
+    for i in 1:matrix.n
+        colstart = matrix.colptr[i]
+        colend = matrix.colptr[i+1] - 1
+        for j in matrix.rowval[colstart:colend]
+            push!(edges, (i + matrix.m, j))
+        end
+    end
+    graph = (row_nodes, col_nodes, edges)
+    return graph, row_node_map, col_node_map
 end
