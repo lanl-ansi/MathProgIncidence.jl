@@ -753,29 +753,45 @@ function limited_bfs(
     else
         error("root is not a node in this graph")
     end
-    # What is a natural data structure to return as a BFS tree?
-    # - An adjacency list?
-    # - First I just need assemble the set of vertices traversed
     g = igraph._graph
-    nodes = NodeType[root]
+    # This is the queue
+    nodes = Int[root]
     idx = 1
-    # I either have to use a length-n array or use a Set/Dict
-    parents = fill(-1, length(igraph._nodes))
-    parents[root] = 0
-    # FIXME: This explores at most the first depth nodes
-    for i in 1:depth
+    # I use a dict rather than an array here to avoid constructing an O(n)
+    # array for every (potentially) small BFS in a (potentially) large graph
+    parents = Dict(root => 0)
+    # We differ from traditional BFS by imposing a depth limit. We store the index
+    # (in the queue) corresponding to the start of the current "level".
+    maxdepth = depth
+    current_depth = 0
+    levelstart = 1
+    while idx <= length(nodes)
         node = nodes[idx]
         parent_idx = idx
-        index_updated = false
+        idx += 1
         for other in Graphs.neighbors(g, node)
-            if parents[other] == -1
+            if other ∉ keys(parents)
+                if parent_idx >= levelstart
+                    # When we first encounter the child of a node in the current level,
+                    # we advance (a) the depth and (b) the level start index.
+                    # The level starts at the child node we are about to add. We do the
+                    # checking here so we can break before adding the child if doing
+                    # so would violate the depth limit.
+                    levelstart = length(nodes) + 1
+                    current_depth += 1
+                    if current_depth > maxdepth
+                        # Break before adding this child to the queue
+                        break
+                    end
+                end
                 parents[other] = parent_idx
                 push!(nodes, other)
-                if !index_updated
-                    idx += 1
-                    index_updated = true
-                end
             end
+        end
+        # Once we exceed the depth limit, we must stop processing children
+        # of future nodes.
+        if current_depth > maxdepth
+            break
         end
     end
     parents = map(n -> parents[n], nodes)
