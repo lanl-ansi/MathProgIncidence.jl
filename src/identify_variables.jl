@@ -199,7 +199,7 @@ function identify_unique_variables(
 end
 
 """
-    identify_unique_variables(fcn)::Vector{JuMP.VariableIndex}
+    identify_unique_variables(fcn)::Vector{MOI.VariableIndex}
 
 Return the variables that appear in the provided MathOptInterface function.
 
@@ -224,7 +224,7 @@ function identify_unique_variables(
     return _filter_duplicates(variables)
 end
 
-# This method is used to handle function-in-set constraints.
+# This method is used to handle variable-in-set constraints.
 function identify_unique_variables(
     var::MOI.VariableIndex
 )::Vector{MOI.VariableIndex}
