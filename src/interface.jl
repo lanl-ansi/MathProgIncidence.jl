@@ -732,9 +732,16 @@ end
 
 function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, indent = "")
     indent = (indent == "" ? "├ " : join(["│ ", indent]))
-    for i in Graphs.neighbors(tree._dag, node)
+    orig_indent = indent
+    neighbors = Graphs.neighbors(tree._dag, node)
+    for i in neighbors
         child = tree._nodes[i]
+        if i == last(neighbors)
+            indent = replace(indent, "├" => "└")
+        end
         push!(lines, "$indent$child")
+        # This could be handled better...
+        indent = orig_indent
         _collect_lines!(lines, tree; node = i, indent)
     end
     return
