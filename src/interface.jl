@@ -713,3 +713,74 @@ end
 block_triangularize(model::JuMP.Model) = block_triangularize(IncidenceGraphInterface(model))
 block_triangularize(matrix::SparseMatrixCSC) = block_triangularize(IncidenceGraphInterface(matrix))
 block_triangularize(matrix::Matrix) = block_triangularize(IncidenceGraphInterface(matrix))
+
+const NodeType = Union{JuMP.VariableRef,JuMP.ConstraintRef,Int}
+
+struct IncidenceSubtree{T}
+    _nodes::Vector{NodeType}
+    _dag::Graphs.DiGraph{T}
+end
+
+function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, indent = "")
+    indent = (indent == "" ? "|- " : join(["|  ", indent]))
+    for i in Graphs.neighbors(tree._dag, node)
+        child = tree._nodes[i]
+        push!(lines, "$indent$child")
+        _collect_lines!(lines, tree; node = i, indent)
+    end
+    return
+end
+
+function Base.show(io::IO, tree::IncidenceSubtree)
+    root = tree._nodes[1]
+    lines = ["$root"]
+    _collect_lines!(lines, tree)
+    for line in lines
+        println(io, line)
+    end
+    return
+end
+
+function limited_bfs(
+    igraph::IncidenceGraphInterface,
+    root::NodeType;
+    depth::Int = 1,
+)
+    root = if root in keys(igraph._var_node_map)
+        igraph._var_node_map[root]
+    elseif root in keys(igraph._con_node_map)
+        igraph._con_node_map[root]
+    else
+        error("root is not a node in this graph")
+    end
+    # What is a natural data structure to return as a BFS tree?
+    # - An adjacency list?
+    # - First I just need assemble the set of vertices traversed
+    g = igraph._graph
+    nodes = NodeType[root]
+    idx = 1
+    # I either have to use a length-n array or use a Set/Dict
+    parents = fill(-1, length(igraph._nodes))
+    parents[root] = 0
+    # FIXME: This explores at most the first depth nodes
+    for i in 1:depth
+        node = nodes[idx]
+        parent_idx = idx
+        index_updated = false
+        for other in Graphs.neighbors(g, node)
+            if parents[other] == -1
+                parents[other] = parent_idx
+                push!(nodes, other)
+                if !index_updated
+                    idx += 1
+                    index_updated = true
+                end
+            end
+        end
+    end
+    parents = map(n -> parents[n], nodes)
+    digraph = Graphs.tree(parents)
+    subtree_nodes = convert(Vector{NodeType}, map(n -> igraph._nodes[n], nodes))
+    tree = IncidenceSubtree(subtree_nodes, digraph)
+    return tree
+end
