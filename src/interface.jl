@@ -714,7 +714,7 @@ block_triangularize(model::JuMP.Model) = block_triangularize(IncidenceGraphInter
 block_triangularize(matrix::SparseMatrixCSC) = block_triangularize(IncidenceGraphInterface(matrix))
 block_triangularize(matrix::Matrix) = block_triangularize(IncidenceGraphInterface(matrix))
 
-const NodeType = Union{
+const SubtreeNodeType = Union{
     JuMP.VariableRef,
     JuMP.ConstraintRef,
     Int,
@@ -726,7 +726,7 @@ const NodeType = Union{
 }
 
 struct IncidenceSubtree{T}
-    _nodes::Vector{NodeType}
+    _nodes::Vector{SubtreeNodeType}
     _dag::Graphs.DiGraph{T}
 end
 
@@ -752,7 +752,7 @@ end
 
 function limited_bfs(
     igraph::IncidenceGraphInterface,
-    root::NodeType;
+    root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef,Int};
     depth::Int = 1,
 )
     root = if root in keys(igraph._var_node_map)
@@ -764,35 +764,29 @@ function limited_bfs(
     end
     adjlist = Graphs.SimpleGraphs.adj(igraph._graph)
     nodes, dag = _limited_bfs(adjlist, root; depth)
-    nodes = convert(Vector{NodeType}, map(n -> igraph._nodes[n], nodes))
-    tree = IncidenceSubtree(nodes, dag)
-    return tree
+    nodes = convert(Vector{SubtreeNodeType}, map(n -> igraph._nodes[n], nodes))
+    return IncidenceSubtree(nodes, dag)
 end
 
-function limited_bfs(root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef}; depth::Int = 1)
-    igraph = IncidenceGraphInterface(root.model)
+function limited_bfs(
+    root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef};
+    depth::Int = 1,
+    kwds...,
+)
+    igraph = IncidenceGraphInterface(root.model; kwds...)
     return limited_bfs(igraph, root; depth)
 end
 
 function limited_bfs(
     igraph::IncidenceGraphInterface,
-    root::Union{
-        JuMP.AffExpr,
-        JuMP.QuadExpr,
-        JuMP.NonlinearExpr,
-    };
+    root::Union{JuMP.AffExpr,JuMP.QuadExpr,JuMP.NonlinearExpr};
     depth::Int = 1,
 )
     nnodes = length(igraph._nodes)
     # Here, I assume the nodes are contiguous integers
     expr_node = nnodes + 1
-    # Get the expression's neighbors. These must be variables.
-    expr_neighbors = identify_unique_variables(JuMP.moi_function(root))
-    # FIXME: I should just have an identify_unique_variables method that returns
-    # VariableRef from expressions. This is just a hack in the meantime.
-    model = igraph._nodes[1].model
-    # Convert VariableIndex to VariableRef
-    expr_neighbors = map(i -> JuMP.VariableRef(model, i), expr_neighbors)
+    # Get the expression's neighbors. These must be variables
+    expr_neighbors = identify_unique_variables(root)
     expr_neighbors = map(v -> igraph._var_node_map[v], expr_neighbors)
     g = igraph._graph
     adjlist = map(n -> Graphs.neighbors(g, n), 1:nnodes)
@@ -802,10 +796,24 @@ function limited_bfs(
     # We know that root (or its corresponding integer, expr_node) is the first
     # node in subtree_nodes. We need to use this because we can't look it up
     # in igraph._nodes.
-    jump_subtree_nodes = NodeType[root]
+    jump_subtree_nodes = SubtreeNodeType[root]
     append!(
         jump_subtree_nodes,
         map(n -> igraph._nodes[n], subtree_nodes[2:end]),
     )
     return IncidenceSubtree(jump_subtree_nodes, dag)
+end
+
+function limited_bfs(
+    root::Union{JuMP.AffExpr, JuMP.QuadExpr, JuMP.NonlinearExpr};
+    depth::Int = 1,
+    kwds...,
+)
+    expr_neighbors = identify_unique_variables(root)
+    if isempty(expr_neighbors)
+        return IncidenceSubtree(SubtreeNodeType[root], Graphs.DiGraph(1))
+    else
+        igraph = IncidenceGraphInterface(expr_neighbors[1].model; kwds...)
+        return limited_bfs(igraph, root; depth)
+    end
 end
