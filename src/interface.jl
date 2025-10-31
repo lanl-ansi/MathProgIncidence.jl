@@ -714,7 +714,16 @@ block_triangularize(model::JuMP.Model) = block_triangularize(IncidenceGraphInter
 block_triangularize(matrix::SparseMatrixCSC) = block_triangularize(IncidenceGraphInterface(matrix))
 block_triangularize(matrix::Matrix) = block_triangularize(IncidenceGraphInterface(matrix))
 
-const NodeType = Union{JuMP.VariableRef,JuMP.ConstraintRef,Int}
+const NodeType = Union{
+    JuMP.VariableRef,
+    JuMP.ConstraintRef,
+    Int,
+    # This is starting to get a little excessive.
+    # Should I just use Vector{Any}?
+    JuMP.AffExpr,
+    JuMP.QuadExpr,
+    JuMP.NonlinearExpr,
+}
 
 struct IncidenceSubtree{T}
     _nodes::Vector{NodeType}
@@ -753,50 +762,50 @@ function limited_bfs(
     else
         error("root is not a node in this graph")
     end
-    g = igraph._graph
-    # This is the queue
-    nodes = Int[root]
-    idx = 1
-    # I use a dict rather than an array here to avoid constructing an O(n)
-    # array for every (potentially) small BFS in a (potentially) large graph
-    parents = Dict(root => 0)
-    # We differ from traditional BFS by imposing a depth limit. We store the index
-    # (in the queue) corresponding to the start of the current "level".
-    maxdepth = depth
-    current_depth = 0
-    levelstart = 1
-    while idx <= length(nodes)
-        node = nodes[idx]
-        parent_idx = idx
-        idx += 1
-        for other in Graphs.neighbors(g, node)
-            if other ∉ keys(parents)
-                if parent_idx >= levelstart
-                    # When we first encounter the child of a node in the current level,
-                    # we advance (a) the depth and (b) the level start index.
-                    # The level starts at the child node we are about to add. We do the
-                    # checking here so we can break before adding the child if doing
-                    # so would violate the depth limit.
-                    levelstart = length(nodes) + 1
-                    current_depth += 1
-                    if current_depth > maxdepth
-                        # Break before adding this child to the queue
-                        break
-                    end
-                end
-                parents[other] = parent_idx
-                push!(nodes, other)
-            end
-        end
-        # Once we exceed the depth limit, we must stop processing children
-        # of future nodes.
-        if current_depth > maxdepth
-            break
-        end
-    end
-    parents = map(n -> parents[n], nodes)
-    digraph = Graphs.tree(parents)
-    subtree_nodes = convert(Vector{NodeType}, map(n -> igraph._nodes[n], nodes))
-    tree = IncidenceSubtree(subtree_nodes, digraph)
+    adjlist = Graphs.SimpleGraphs.adj(igraph._graph)
+    nodes, dag = _limited_bfs(adjlist, root; depth)
+    nodes = convert(Vector{NodeType}, map(n -> igraph._nodes[n], nodes))
+    tree = IncidenceSubtree(nodes, dag)
     return tree
+end
+
+function limited_bfs(root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef}; depth::Int = 1)
+    igraph = IncidenceGraphInterface(root.model)
+    return limited_bfs(igraph, root; depth)
+end
+
+function limited_bfs(
+    igraph::IncidenceGraphInterface,
+    root::Union{
+        JuMP.AffExpr,
+        JuMP.QuadExpr,
+        JuMP.NonlinearExpr,
+    };
+    depth::Int = 1,
+)
+    nnodes = length(igraph._nodes)
+    # Here, I assume the nodes are contiguous integers
+    expr_node = nnodes + 1
+    # Get the expression's neighbors. These must be variables.
+    expr_neighbors = identify_unique_variables(JuMP.moi_function(root))
+    # FIXME: I should just have an identify_unique_variables method that returns
+    # VariableRef from expressions. This is just a hack in the meantime.
+    model = igraph._nodes[1].model
+    # Convert VariableIndex to VariableRef
+    expr_neighbors = map(i -> JuMP.VariableRef(model, i), expr_neighbors)
+    expr_neighbors = map(v -> igraph._var_node_map[v], expr_neighbors)
+    g = igraph._graph
+    adjlist = map(n -> Graphs.neighbors(g, n), 1:nnodes)
+    # Add the new node's edges to our adjacency list
+    push!(adjlist, expr_neighbors)
+    subtree_nodes, dag = _limited_bfs(adjlist, expr_node; depth)
+    # We know that root (or its corresponding integer, expr_node) is the first
+    # node in subtree_nodes. We need to use this because we can't look it up
+    # in igraph._nodes.
+    jump_subtree_nodes = NodeType[root]
+    append!(
+        jump_subtree_nodes,
+        map(n -> igraph._nodes[n], subtree_nodes[2:end]),
+    )
+    return IncidenceSubtree(jump_subtree_nodes, dag)
 end
