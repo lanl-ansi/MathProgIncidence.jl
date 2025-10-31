@@ -731,7 +731,7 @@ struct IncidenceSubtree{T}
 end
 
 function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, indent = "")
-    indent = (indent == "" ? "|- " : join(["|  ", indent]))
+    indent = (indent == "" ? "├ " : join(["│ ", indent]))
     for i in Graphs.neighbors(tree._dag, node)
         child = tree._nodes[i]
         push!(lines, "$indent$child")
