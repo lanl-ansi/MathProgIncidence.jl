@@ -34,6 +34,8 @@ include("dulmage_mendelsohn.jl")
 include("block_triangularize.jl")
 include("interface.jl")
 
+include("visualize.jl")
+
 # Methods to get incidence matrices (as SparseMatrixCSC) from
 # JuMP models or incidence graphs
 include("incidence_matrix.jl")

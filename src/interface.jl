@@ -277,6 +277,8 @@ function maximum_matching(
     return maximum_matching(igraph)
 end
 
+# TODO: These types should be parameterized to handle integers as well
+# as variables/constraints.
 const DMConPartition = NamedTuple{
     (:underconstrained, :square, :overconstrained, :unmatched),
     Tuple{
@@ -295,6 +297,15 @@ const DMVarPartition = NamedTuple{
         Vector{JuMP.VariableRef},
         Vector{JuMP.VariableRef},
     },
+}
+
+const DulmageMendelsohnDecomposition = NamedTuple{
+    (:con, :var),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # wells as variables/constraints.
+    # TODO: Parameterize this type? Or just always use ints, then keep the vars/cons
+    # somewhere else?
+    Tuple{NamedTuple,NamedTuple},
 }
 
 """
@@ -394,7 +405,7 @@ julia> # As there are no unmatched constraints, the overconstrained subsystem is
 """
 function dulmage_mendelsohn(
     igraph::IncidenceGraphInterface
-)
+)::DulmageMendelsohnDecomposition
     ncon = length(igraph._con_node_map)
     con_node_set = Set(1:ncon)
     con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
@@ -413,13 +424,13 @@ function dulmage_mendelsohn(
         square = [nodes[n] for n in var_dmp[4]],
         overconstrained = [nodes[n] for n in var_dmp[3]],
     )
-    return con_dmp, var_dmp
+    return DulmageMendelsohnDecomposition((con_dmp, var_dmp))
 end
 
 function dulmage_mendelsohn(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Tuple{DMConPartition, DMVarPartition}
+)::DulmageMendelsohnDecomposition
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end
