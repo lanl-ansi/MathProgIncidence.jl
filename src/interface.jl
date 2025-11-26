@@ -553,6 +553,15 @@ connected_components(model::JuMP.Model) = connected_components(IncidenceGraphInt
 connected_components(matrix::SparseMatrixCSC) = connected_components(IncidenceGraphInterface(matrix))
 connected_components(matrix::Matrix) = connected_components(IncidenceGraphInterface(matrix))
 
+const Subsystem = NamedTuple{
+    (:con, :var),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # wells as variables/constraints.
+    # TODO: Parameterize this type? Or just always use ints, then keep the vars/cons
+    # somewhere else?
+    Tuple{Vector,Vector},
+}
+
 """
     block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
 
@@ -642,7 +651,7 @@ function block_triangularize(
     matching = maximum_matching(igraph._graph, connodeset)
     nmatch = length(matching)
     if nvar != ncon || nvar != nmatch
-        @error (
+        error(
             "block_triangularize only supports square systems with perfect matchings."
             * "Got nvar=$nvar, ncon=$ncon, n. matched = $nmatch"
         )
@@ -650,7 +659,7 @@ function block_triangularize(
     connode_blocks = _block_triangularize(igraph._graph, matching)
     # node_blocks is a vector of tuples of vectors: [([cons], [vars]),...]
     blocks = [
-        ([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b])
+        Subsystem(([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b]))
         for b in connode_blocks
     ]
     return blocks
@@ -716,7 +725,7 @@ x[3], (x[1] * (x[3] ^ 0.5)) - 3.0 = 0
 function block_triangularize(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
+)::Vector{Subsystem}
     igraph = IncidenceGraphInterface(constraints, variables)
     return block_triangularize(igraph)
 end
