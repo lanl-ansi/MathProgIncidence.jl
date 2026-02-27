@@ -742,19 +742,17 @@ struct IncidenceSubtree{T}
     _dag::Graphs.DiGraph{T}
 end
 
-function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, indent = "")
-    indent = (indent == "" ? "├ " : join(["│ ", indent]))
-    orig_indent = indent
+function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, prefix = "")
     neighbors = Graphs.neighbors(tree._dag, node)
-    for i in neighbors
-        child = tree._nodes[i]
-        if i == last(neighbors)
-            indent = replace(indent, "├" => "└")
-        end
-        push!(lines, "$indent$child")
-        # This could be handled better...
-        indent = orig_indent
-        _collect_lines!(lines, tree; node = i, indent)
+    for (i, neighbor) in enumerate(neighbors)
+        child = tree._nodes[neighbor]
+        is_last = (i == length(neighbors))
+        branch = is_last ? "└ " : "├ "
+        push!(lines, prefix * branch * string(child))
+        # Keep the vertical bar in the indent/prefix if there are more
+        # nodes coming after this one.
+        child_prefix = prefix * (is_last ? "  " : "│ ")
+        _collect_lines!(lines, tree; node = i, prefix = child_prefix)
     end
     return
 end
