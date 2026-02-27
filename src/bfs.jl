@@ -19,6 +19,17 @@
 
 import Graphs
 
+"""
+    _limited_bfs(adjacency_list::Vector{Vector{Int}}, root; depth = 1)
+
+Limited-depth breadth-first search (BFS) on a graph described by an adjacency
+list. The return type is vector of nodes (indices in the provided adjacency list)
+and a Graphs.jl `DiGraph` containing the resulting BFS tree.
+
+!!! warning
+    This function is not intended for public use. Its call signature and return
+    type are subject to change without notice.
+"""
 function _limited_bfs(adjacency_list::Vector{Vector{Int}}, root::Int; depth::Int = 1)
     # This is the queue
     nodes = Int[root]
