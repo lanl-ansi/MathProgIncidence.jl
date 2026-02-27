@@ -725,6 +725,18 @@ const SubtreeNodeType = Union{
     JuMP.NonlinearExpr,
 }
 
+"""
+    IncidenceSubtree
+
+The return type of `limited_bfs`. It contains a vector of nodes
+(JuMP variables, constraints, or expressions) and Graphs.jl `DiGraph`
+containing the edges.
+
+!!! warning
+    The internal attributes of `IncidenceSubtree` should not be accessed.
+    They are subject to change without notice. The only currently supported use
+    of `IncidenceSubtree` is to display its contents, e.g., via `println`.
+"""
 struct IncidenceSubtree{T}
     _nodes::Vector{SubtreeNodeType}
     _dag::Graphs.DiGraph{T}
@@ -757,6 +769,49 @@ function Base.show(io::IO, tree::IncidenceSubtree)
     return
 end
 
+"""
+    limited_bfs(
+        igraph::IncidenceGraphInterface, root; depth = 1
+    )::IncidenceSubtree
+
+Perform a limited-depth breadth-first search (BFS) starting from the `root`
+variable, constraint, or expression. The resulting BFS tree is returned as an
+[`IncidenceSubtree`](@ref), which can be displayed on the console.
+
+# Example
+```julia-repl
+julia> using JuMP; import MathProgIncidence as MPIN
+
+julia> model = Model(); @variable(model, x[1:5] >= 0);
+
+julia> c1 = @constraint(model, x[1] + x[2]^2 + x[3]^3 + x[4]^4 +x[5]^5 == 5);
+
+julia> c2 = @constraint(model, x[1] == 1);
+
+julia> c3 = @constraint(model, x[1] * x[3]^0.5 == 3);
+
+julia> c4 = @constraint(model, x[1] - x[2] + x[3] - x[4] == 10);
+
+julia> igraph = MPIN.IncidenceGraphInterface(model)
+
+julia> MPIN.limited_bfs(igraph, x[3])
+x[3]
+├ ((x[2]² + x[1]) + (x[5] ^ 5) + (x[4] ^ 4) + (x[3] ^ 3)) - 5 = 0
+├ (x[1] * (x[3] ^ 0.5)) - 3 = 0
+└ x[1] - x[2] + x[3] - x[4] = 10
+
+julia> MPIN.limited_bfs(igraph, x[3]; depth = 2)
+x[3]
+├ ((x[2]² + x[1]) + (x[5] ^ 5) + (x[4] ^ 4) + (x[3] ^ 3)) - 5 = 0
+│ ├ x[2]
+│ ├ x[1]
+│ ├ x[5]
+│ └ x[4]
+├ (x[1] * (x[3] ^ 0.5)) - 3 = 0
+└ x[1] - x[2] + x[3] - x[4] = 10
+
+```
+"""
 function limited_bfs(
     igraph::IncidenceGraphInterface,
     root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef,Int};
@@ -775,6 +830,20 @@ function limited_bfs(
     return IncidenceSubtree(nodes, dag)
 end
 
+"""
+    limited_bfs(root; depth = 1, kwds...)
+
+Convenience methods for [`limited_bfs`](@ref) that only require the
+root as a JuMP variable, constraint, or expression. The model is automatically
+inferred.
+
+!!! note
+    This is not an efficient implementation. The "root-only" methods will
+    reconstruct the entire incidence graph every time they are called,
+    regardless of how little of the graph actually needs to be traversed
+    by the BFS. For a more efficient implementation, pass in the
+    [`IncidenceGraphInterface`](@ref) as well.
+"""
 function limited_bfs(
     root::Union{JuMP.VariableRef,<:JuMP.ConstraintRef};
     depth::Int = 1,
