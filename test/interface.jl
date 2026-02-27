@@ -18,6 +18,7 @@
 #  ___________________________________________________________________________
 
 using Test: @test, @test_throws, @testset
+import Graphs
 import JuMP
 import Ipopt
 import MathProgIncidence
@@ -505,6 +506,53 @@ function test_block_triangularize_matrix()
     return
 end
 
+function test_bfs_from_objective()
+    model = make_simple_model_with_ScalarNonlinearFunction()
+    objective = JuMP.objective_function(model)
+    x = model[:x]
+    # Here we exercise the expression interface with no incidence graph and
+    # the default depth=1
+    tree = MathProgIncidence.limited_bfs(objective)
+    nodeset = Set(Any[objective, x...])
+    @test nodeset == convert(Set{Any}, Set(tree._nodes))
+    predicted_edgeset = Set(Any[
+        (objective, x[1]),
+        (objective, x[2]),
+        (objective, x[3]),
+    ])
+    sources = map(e -> tree._nodes[e.src], Graphs.edges(tree._dag))
+    dests = map(e -> tree._nodes[e.dst], Graphs.edges(tree._dag))
+    actual_edgeset = Set{Any}(zip(sources, dests))
+    @test actual_edgeset == predicted_edgeset
+    return
+end
+
+function test_bfs_from_variable()
+    # Now we exercise the igraph interface starting from a variable with depth=2
+    model = make_simple_model_with_ScalarNonlinearFunction()
+    x = model[:x]
+    igraph = MathProgIncidence.IncidenceGraphInterface(model; include_inequality = true)
+    tree = MathProgIncidence.limited_bfs(igraph, x[1]; depth = 2)
+    nodeset = Set(Any[
+        x..., model[:eq1], model[:ineq2], JuMP.LowerBoundRef(x[1])
+    ])
+    @test nodeset == Set{Any}(tree._nodes)
+    predicted_edgeset = Set(Any[
+        (x[1], model[:eq1]),
+        (x[1], model[:ineq2]),
+        (x[1], JuMP.LowerBoundRef(x[1])),
+        # Note that the particular edges that appear here are not uniquely defined
+        # and may change with a different implementation.
+        (model[:eq1], x[2]),
+        (model[:eq1], x[3]),
+    ])
+    sources = map(e -> tree._nodes[e.src], Graphs.edges(tree._dag))
+    dests = map(e -> tree._nodes[e.dst], Graphs.edges(tree._dag))
+    actual_edgeset = Set{Any}(zip(sources, dests))
+    @test actual_edgeset == predicted_edgeset
+    return
+end
+
 @testset "interface" begin
     test_construct_interface()
     test_construct_interface(make_degenerate_flow_model_with_ScalarNonlinearFunction)
@@ -549,6 +597,14 @@ end
         test_one_connected_component_cons_vars()
         test_one_connected_component_cons_vars(make_degenerate_flow_model_with_ScalarNonlinearFunction)
         test_connected_components_matrix()
+    end
+
+    @testset "BFS" begin
+        # Testing printed strings can be a bit fragile, so we test the internal
+        # IncidenceSubtree data structures. These data are subject to change, so I
+        # don't want to write too many tests that are specific to this implementation.
+        test_bfs_from_objective()
+        test_bfs_from_variable()
     end
 
     test_construct_interface_active_inequalities()
