@@ -744,15 +744,19 @@ end
 
 function _collect_lines!(lines::Vector, tree::IncidenceSubtree; node = 1, prefix = "")
     neighbors = Graphs.neighbors(tree._dag, node)
-    for (i, neighbor) in enumerate(neighbors)
-        child = tree._nodes[neighbor]
+    for (i, childidx) in enumerate(neighbors)
+        # i is the index within the vector of children, childidx is the index
+        # within the tree's overall node list. childnode is the "object" that
+        # the node refers to, usually a variable or constraint.
+        childnode = tree._nodes[childidx]
         is_last = (i == length(neighbors))
         branch = is_last ? "└ " : "├ "
-        push!(lines, prefix * branch * string(child))
+        push!(lines, prefix * branch * string(childnode))
         # Keep the vertical bar in the indent/prefix if there are more
         # nodes coming after this one.
         child_prefix = prefix * (is_last ? "  " : "│ ")
-        _collect_lines!(lines, tree; node = i, prefix = child_prefix)
+        # We recurse on childidx, the index in the tree's node list
+        _collect_lines!(lines, tree; node = childidx, prefix = child_prefix)
     end
     return
 end
