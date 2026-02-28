@@ -550,6 +550,16 @@ function test_bfs_from_variable()
     dests = map(e -> tree._nodes[e.dst], Graphs.edges(tree._dag))
     actual_edgeset = Set{Any}(zip(sources, dests))
     @test actual_edgeset == predicted_edgeset
+    treestr = sprint(println, tree)
+    @test treestr == """
+x[1]
+├ eq1 : ((x[1] ^ 1.5) * (x[2]²)) - x[3] = 0
+│ ├ x[2]
+│ └ x[3]
+├ ineq2 : x[1] + 2 x[2] ≥ 4
+└ x[1] ≥ 0
+
+"""
     return
 end
 
