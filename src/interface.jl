@@ -867,7 +867,8 @@ function limited_bfs(
     expr_neighbors = identify_unique_variables(root)
     expr_neighbors = map(v -> igraph._var_node_map[v], expr_neighbors)
     g = igraph._graph
-    adjlist = map(n -> Graphs.neighbors(g, n), 1:nnodes)
+    # Graphs.neighbors(g, n) is sometimes (OS and Julia-version dependent?) a FrozenVector{Int}
+    adjlist = map(n -> collect(Graphs.neighbors(g, n)), 1:nnodes)
     # Add the new node's edges to our adjacency list
     push!(adjlist, expr_neighbors)
     subtree_nodes, dag = _limited_bfs(adjlist, expr_node; depth)
