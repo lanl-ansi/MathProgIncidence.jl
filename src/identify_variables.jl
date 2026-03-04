@@ -199,7 +199,7 @@ function identify_unique_variables(
 end
 
 """
-    identify_unique_variables(fcn)::Vector{JuMP.VariableIndex}
+    identify_unique_variables(fcn)::Vector{MOI.VariableIndex}
 
 Return the variables that appear in the provided MathOptInterface function.
 
@@ -224,7 +224,7 @@ function identify_unique_variables(
     return _filter_duplicates(variables)
 end
 
-# This method is used to handle function-in-set constraints.
+# This method is used to handle variable-in-set constraints.
 function identify_unique_variables(
     var::MOI.VariableIndex
 )::Vector{MOI.VariableIndex}
@@ -247,6 +247,39 @@ function identify_unique_variables(
         typeof(fcn),
     ))
 end
+
+function identify_unique_variables(expr::JuMP.AffExpr)::Vector{JuMP.VariableRef}
+    return _filter_duplicates(collect(keys(expr.terms)))
+end
+
+function identify_unique_variables(expr::JuMP.QuadExpr)::Vector{JuMP.VariableRef}
+    vars = collect(keys(expr.aff.terms))
+    for term in keys(expr.terms)
+        push!(vars, term.a)
+        push!(vars, term.b)
+    end
+    return _filter_duplicates(vars)
+end
+
+function identify_unique_variables(expr::JuMP.VariableRef)::Vector{JuMP.VariableRef}
+    return [expr]
+end
+
+function identify_unique_variables(expr::T)::Vector{JuMP.VariableRef} where {T<:Real}
+    return []
+end
+
+function identify_unique_variables(expr::JuMP.NonlinearExpr)::Vector{JuMP.VariableRef}
+    vars = JuMP.VariableRef[]
+    for arg in expr.args
+        # NOTE: This could be made more efficient by avoiding the construction
+        # of many small vectors. However, this method is probably not critical
+        # for overall performance as of 2025-10-31.
+        append!(vars, identify_unique_variables(arg))
+    end
+    return _filter_duplicates(vars)
+end
+
 
 """
     _identify_variables(fcn)::Vector{JuMP.VariableIndex}

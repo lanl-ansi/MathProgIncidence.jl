@@ -11,4 +11,6 @@ maximum_matching
 dulmage_mendelsohn
 connected_components
 block_triangularize
+limited_bfs
+IncidenceSubtree
 ```

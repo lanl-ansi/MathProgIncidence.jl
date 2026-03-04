@@ -32,6 +32,7 @@ include("incidence_graph.jl")
 include("maximum_matching.jl")
 include("dulmage_mendelsohn.jl")
 include("block_triangularize.jl")
+include("bfs.jl")
 include("interface.jl")
 
 include("visualize.jl")
