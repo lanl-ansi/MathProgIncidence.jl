@@ -22,17 +22,20 @@ Visualization of the decompositions implemented. These depend on the types
 defined in interface.jl
 """
 
+_pad_before_count(label, count, pad) = string(rpad(label, pad), count)
+
 function Base.show(io::IO, igraph::IncidenceGraphInterface)
     # Really, this a graph of _expressions_ and variables...
     rowstr = eltype(keys(igraph._con_node_map)) <: JuMP.ConstraintRef ? "Constraints" : "Rows"
     colstr = eltype(keys(igraph._var_node_map)) <: JuMP.VariableRef ? "Variables" : "Columns"
     nrow = length(igraph._con_node_map)
     ncol = length(igraph._var_node_map)
+    pad = max(length(rowstr), length(colstr))
     # TODO: I want to print variables and constraints, but I don't want the display to
     # get unwieldy. We commonly have 10k+ variables and constraints
     println(io, "An Incidence Graph of $rowstr and $colstr")
-    println(io, "├ $rowstr: $nrow")
-    print(io, "└ $colstr: $ncol")
+    println(io, "├ " * _pad_before_count(rowstr * ": ", nrow, pad + 2))
+    print(io, "└ " * _pad_before_count(colstr * ": ", ncol, pad + 2))
     return
 end
 
@@ -70,9 +73,10 @@ function Base.show(io::IO, subsystem::Subsystem)
     colstr = eltype(subsystem.var) <: JuMP.VariableRef ? "Variables" : "Columns"
     nrow = length(subsystem.con)
     ncol = length(subsystem.var)
+    pad = max(length(rowstr), length(colstr))
     println(io, "A Subsystem of $rowstr and $colstr")
-    println(io, "├ $rowstr: $nrow")
-    print(io, "└ $colstr: $ncol")
+    println(io, "├ " * _pad_before_count(rowstr * ": ", nrow, pad + 2))
+    print(io, "└ " * _pad_before_count(colstr * ": ", ncol, pad + 2))
     return
 end
 
@@ -115,15 +119,16 @@ function Base.show(io::IO, subsystems::Vector{Subsystem})
         colstr = eltype(sub.var) <: JuMP.VariableRef ? "Variables" : "Columns"
         nrow = length(sub.con)
         ncol = length(sub.var)
+        pad = max(length(rowstr), length(colstr))
         is_last = i == n_subs
         branch = is_last ? "└" : "├"
         prefix = is_last ? "  " : "│ "
         println(io, "$branch Subsystem $i")
-        println(io, prefix * "├ $rowstr: $nrow")
+        println(io, prefix * "├ " * _pad_before_count(rowstr * ": ", nrow, pad + 2))
         if is_last
-            print(io, prefix * "└ $colstr: $ncol")
+            print(io, prefix * "└ " * _pad_before_count(colstr * ": ", ncol, pad + 2))
         else
-            println(io, prefix * "└ $colstr: $ncol")
+            println(io, prefix * "└ " * _pad_before_count(colstr * ": ", ncol, pad + 2))
         end
     end
     return
