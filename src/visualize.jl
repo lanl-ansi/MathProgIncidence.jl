@@ -76,6 +76,37 @@ function Base.show(io::IO, subsystem::Subsystem)
     return
 end
 
+function Base.show(io::IO, cc::ConnectedComponentDecomposition)
+    @assert length(cc.rows) == length(cc.columns)
+    n_comps = length(cc.rows)
+    print_indented = (subsystem, prefix) -> begin
+        lines = split(sprint(print, subsystem), "\n")
+        for (i, line) in enumerate(lines)
+            if i == 1
+                println(io)
+            elseif i == length(lines)
+                print(io, prefix * line)
+            else
+                println(io, prefix * line)
+            end
+        end
+        return
+    end
+    println(io, "Connected Components: $n_comps")
+    for (i, (row_comp, col_comp)) in enumerate(zip(cc.rows, cc.columns))
+        is_last = i == n_comps
+        branch = is_last ? "└" : "├"
+        prefix = is_last ? "  " : "│ "
+        print(io, "$branch Component $i")
+        subsystem = Subsystem((row_comp, col_comp))
+        print_indented(subsystem, prefix)
+        if !is_last
+            println()
+        end
+    end
+    return
+end
+
 function Base.show(io::IO, subsystems::Vector{Subsystem})
     n_subs = length(subsystems)
     println(io, "A Vector of $n_subs Subsystems")
