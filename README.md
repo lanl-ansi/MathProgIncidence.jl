@@ -28,19 +28,19 @@ and the dependencies thereof.
 using JuMP
 import MathProgIncidence as MPIN
 
-m = Model()
+model = Model()
 comps = [1, 2, 3]
-@variable(m, x[comps], start=1/3.0)
-@variable(m, flow_comp[comps], start=10.0)
-@variable(m, flow, start=30.0)
-@variable(m, rho, start=1.0)
+@variable(model, x[comps], start=1/3.0)
+@variable(model, flow_comp[comps], start=10.0)
+@variable(model, flow, start=30.0)
+@variable(model, rho, start=1.0)
 
-@constraint(m, sum_comp_eqn, sum(x) == 1)
-@constraint(m, comp_dens_eqn, x*rho .== [1.0, 1.1, 1.2])
-@NLconstraint(m, bulk_dens_eqn, 1/rho - sum(1/x[j] for j in comps) == 0)
-@constraint(m, comp_flow_eqn, x.*flow .== flow_comp)
+@constraint(model, sum_comp_eqn, sum(x) == 1)
+@constraint(model, comp_dens_eqn, x*rho .== [1.0, 1.1, 1.2])
+@constraint(model, bulk_dens_eqn, 1/rho - sum(1/x[j] for j in comps) == 0)
+@constraint(model, comp_flow_eqn, x.*flow .== flow_comp)
 
-igraph = MPIN.IncidenceGraphInterface(m)
+igraph = MPIN.IncidenceGraphInterface(model)
 con_dmp, var_dmp = MPIN.dulmage_mendelsohn(igraph)
 oc_con = [con_dmp.overconstrained..., con_dmp.unmatched...]
 oc_var = var_dmp.overconstrained
