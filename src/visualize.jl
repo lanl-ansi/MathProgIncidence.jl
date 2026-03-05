@@ -78,25 +78,22 @@ end
 
 function Base.show(io::IO, subsystems::Vector{Subsystem})
     n_subs = length(subsystems)
-    msg = "Set of $n_subs subsystems"
-    println(io, msg)
-    println(io, repeat("=", length(msg)))
+    println(io, "A Vector of $n_subs Subsystems")
     for (i, sub) in enumerate(subsystems)
-        println()
-        nvar = length(sub.var)
-        ncon = length(sub.con)
-        msg = "Subsystem $i: $nvar variables, $ncon constraints"
-        println(io, msg)
-        println(io, repeat("-", length(msg)))
-        println(io, "Variables:")
-        for var in sub.var
-            println(io, "  $var")
-        end
-        println(io, "Constraints:")
-        for con in sub.con
-            println(io, "  $con")
+        rowstr = eltype(sub.con) <: JuMP.ConstraintRef ? "Constraints" : "Rows"
+        colstr = eltype(sub.var) <: JuMP.VariableRef ? "Variables" : "Columns"
+        nrow = length(sub.con)
+        ncol = length(sub.var)
+        is_last = i == n_subs
+        branch = is_last ? "└" : "├"
+        prefix = is_last ? "  " : "│ "
+        println(io, "$branch Subsystem $i")
+        println(io, prefix * "├ $rowstr: $nrow")
+        if is_last
+            print(io, prefix * "└ $colstr: $ncol")
+        else
+            println(io, prefix * "└ $colstr: $ncol")
         end
     end
-    println(io, repeat("=", length(msg)))
     return
 end
