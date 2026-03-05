@@ -26,4 +26,5 @@ using Test
     include("incidence_graph.jl")
     include("interface.jl")
     include("incidence_matrix.jl")
+    include("visualize.jl")
 end

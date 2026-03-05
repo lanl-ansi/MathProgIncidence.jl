@@ -59,10 +59,10 @@ function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
     println(io, "Dulmage-Mendelsohn Decomposition")
     print(io, "├ Under-constrained Subsystem")
     print_indented(uc, "│ ")
-    println()
+    println(io)
     print(io, "├ Well-constrained Subsystem")
     print_indented(wc, "│ ")
-    println()
+    println(io)
     print(io, "└ Over-constrained Subsystem")
     print_indented(oc, "  ")
     return
@@ -105,7 +105,7 @@ function Base.show(io::IO, cc::ConnectedComponentDecomposition)
         subsystem = Subsystem((row_comp, col_comp))
         print_indented(subsystem, prefix)
         if !is_last
-            println()
+            println(io)
         end
     end
     return
