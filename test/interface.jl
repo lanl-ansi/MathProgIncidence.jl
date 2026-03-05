@@ -495,7 +495,7 @@ function test_block_triangularize_matrix()
         0 1 0;
     ]
     function _test_blocks(block)
-        @test blocks[1] == ([3], [2])
+        @test blocks[1] == MathProgIncidence.Subsystem(([3], [2]))
         @test Set(blocks[2][1]) == Set([1, 2])
         @test Set(blocks[2][2]) == Set([1, 3])
     end
