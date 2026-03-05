@@ -556,7 +556,7 @@ connected_components(matrix::Matrix) = connected_components(IncidenceGraphInterf
 const Subsystem = NamedTuple{
     (:con, :var),
     # NOTE: These fields are not fully typed as we need to support ints as
-    # well as variables/constraints.
+    # wells as variables/constraints.
     # TODO: Parameterize this type? Or just always use ints, then keep the vars/cons
     # somewhere else?
     Tuple{Vector,Vector},
