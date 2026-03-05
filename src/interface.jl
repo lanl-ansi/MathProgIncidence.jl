@@ -439,16 +439,24 @@ dulmage_mendelsohn(model::JuMP.Model) = dulmage_mendelsohn(IncidenceGraphInterfa
 dulmage_mendelsohn(matrix::SparseMatrixCSC) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 dulmage_mendelsohn(matrix::Matrix) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 
+const ConnectedComponentDecomposition = NamedTuple{
+    (:rows, :columns),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # well as variables/constraints.
+    Tuple{Vector{Vector},Vector{Vector}},
+}
+
 """
     connected_components(igraph::IncidenceGraphInterface)
 
 Return the connected components of a bipartite incidence graph of constraints
 and variables.
 
-The connected components are returned as two vector-of-vectors, containing
-the variables in each connected component and the constraints in each
-connected component. Note that the input graph is undirected, so there is no
-distinction between strongly and weakly connected components.
+The connected components are returned as a NamedTuple with fields `rows` and
+`columns`, each a vector-of-vectors containing the constraints/rows and
+variables/columns in each connected component. Note that the input graph is
+undirected, so there is no distinction between strongly and weakly connected
+components.
 
 # Example
 ```julia-repl
@@ -466,14 +474,14 @@ julia> @constraint(m, eq2, x[2]^2 == 2);
 
 julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> con_comps, var_comps = MathProgIncidence.connected_components(igraph);
+julia> cc = MathProgIncidence.connected_components(igraph);
 
-julia> con_comps
+julia> cc.rows
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] = 1]
  [eq2 : x[2]² = 2]
 
-julia> var_comps
+julia> cc.columns
 2-element Vector{Vector{VariableRef}}:
  [x[1]]
  [x[2]]
@@ -482,7 +490,7 @@ julia> var_comps
 """
 function connected_components(
     igraph::IncidenceGraphInterface
-)
+)::ConnectedComponentDecomposition
     comps = Graphs.connected_components(igraph._graph)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
@@ -490,7 +498,7 @@ function connected_components(
     # TODO: Sort components?
     con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
     var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
-    return con_comps, var_comps
+    return (rows = con_comps, columns = var_comps)
 end
 
 
@@ -527,14 +535,14 @@ julia> uc_con = con_dmp.underconstrained;
 
 julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
 
-julia> con_comps, var_comps = MathProgIncidence.connected_components(uc_con, uc_var);
+julia> cc = MathProgIncidence.connected_components(uc_con, uc_var);
 
-julia> con_comps
+julia> cc.rows
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] + x[3] = 7]
  [eq2 : x[2]² + x[4]² = 1]
 
-julia> var_comps
+julia> cc.columns
 2-element Vector{Vector{VariableRef}}:
  [x[3], x[1]]
  [x[4], x[2]]
@@ -544,7 +552,7 @@ julia> var_comps
 function connected_components(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+)::ConnectedComponentDecomposition
     igraph = IncidenceGraphInterface(constraints, variables)
     return connected_components(igraph)
 end
