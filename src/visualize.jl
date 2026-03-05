@@ -45,6 +45,8 @@ function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
         for (i, line) in enumerate(lines)
             if i == 1
                 println(io)
+            elseif i == length(lines)
+                print(io, prefix * line)
             else
                 println(io, prefix * line)
             end
@@ -54,8 +56,10 @@ function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
     println(io, "Dulmage-Mendelsohn Decomposition")
     print(io, "├ Under-constrained Subsystem")
     print_indented(uc, "│ ")
+    println()
     print(io, "├ Well-constrained Subsystem")
     print_indented(wc, "│ ")
+    println()
     print(io, "└ Over-constrained Subsystem")
     print_indented(oc, "  ")
     return
