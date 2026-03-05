@@ -22,9 +22,23 @@ Visualization of the decompositions implemented. These depend on the types
 defined in interface.jl
 """
 
+function Base.show(io::IO, igraph::IncidenceGraphInterface)
+    # Really, this a graph of _expressions_ and variables...
+    rowstr = eltype(keys(igraph._con_node_map)) <: JuMP.ConstraintRef ? "Constraints" : "Rows"
+    colstr = eltype(keys(igraph._var_node_map)) <: JuMP.VariableRef ? "Variables" : "Columns"
+    nrow = length(igraph._con_node_map)
+    ncol = length(igraph._var_node_map)
+    # TODO: I want to print variables and constraints, but I don't want the display to
+    # get unwieldy. We commonly have 10k+ variables and constraints
+    println(io, "An Incidence Graph of $rowstr and $colstr")
+    println(io, "├ $rowstr: $nrow")
+    print(io, "└ $colstr: $ncol")
+    return
+end
+
 function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
-    nvar = sum(map(length, dm.var))
-    ncon = sum(map(length, dm.con))
+    ncol = sum(map(length, dm.var))
+    nrow = sum(map(length, dm.con))
     #uc_var = vcat(dm.var.underconstrained, dm.var.unmatched)
     #uc_con = dm.con.underconstrained
     #oc_var = dm.var.overconstrained
@@ -32,7 +46,7 @@ function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
     uc = Subsystem((dm.con.underconstrained, vcat(dm.var.unmatched, dm.var.underconstrained)))
     oc = Subsystem((vcat(dm.con.overconstrained, dm.con.unmatched), dm.var.overconstrained))
     wc = Subsystem((dm.con.square, dm.var.square))
-    msg = "Dulmage-Mendelsohn decomposition with $ncon constraints and $nvar variables"
+    msg = "Dulmage-Mendelsohn decomposition with $nrow constraints and $ncol variables"
     nchar = length(msg)
     println(io, msg)
     println(io, repeat("-", nchar))
