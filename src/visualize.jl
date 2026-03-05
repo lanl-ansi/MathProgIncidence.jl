@@ -37,43 +37,38 @@ function Base.show(io::IO, igraph::IncidenceGraphInterface)
 end
 
 function Base.show(io::IO, dm::DulmageMendelsohnDecomposition)
-    ncol = sum(map(length, dm.var))
-    nrow = sum(map(length, dm.con))
-    #uc_var = vcat(dm.var.underconstrained, dm.var.unmatched)
-    #uc_con = dm.con.underconstrained
-    #oc_var = dm.var.overconstrained
-    #oc_con = vcat(dm.con.overconstrained, dm.con.unmatched)
     uc = Subsystem((dm.con.underconstrained, vcat(dm.var.unmatched, dm.var.underconstrained)))
     oc = Subsystem((vcat(dm.con.overconstrained, dm.con.unmatched), dm.var.overconstrained))
     wc = Subsystem((dm.con.square, dm.var.square))
-    msg = "Dulmage-Mendelsohn decomposition with $nrow constraints and $ncol variables"
-    nchar = length(msg)
-    println(io, msg)
-    println(io, repeat("-", nchar))
-    println(io, "Under-constrained subsystem: $(length(uc.con)) constraints x $(length(uc.var)) variables")
-    println(io, uc)
-    println(io, "Over-constrained subsystem:  $(length(oc.con)) constraints x $(length(oc.var)) variables")
-    println(io, oc)
-    println(io, "Well-constrained subsystem:  $(length(wc.con)) constraints x $(length(wc.var)) variables")
-    println(io, wc)
-    println(io, repeat("-", nchar))
+    print_indented = (subsystem, prefix) -> begin
+        lines = split(sprint(print, subsystem), "\n")
+        for (i, line) in enumerate(lines)
+            if i == 1
+                println(io)
+            else
+                println(io, prefix * line)
+            end
+        end
+        return
+    end
+    println(io, "Dulmage-Mendelsohn Decomposition")
+    print(io, "├ Under-constrained Subsystem")
+    print_indented(uc, "│ ")
+    print(io, "├ Well-constrained Subsystem")
+    print_indented(wc, "│ ")
+    print(io, "└ Over-constrained Subsystem")
+    print_indented(oc, "  ")
     return
 end
 
 function Base.show(io::IO, subsystem::Subsystem)
-    nvar = length(subsystem.var)
-    ncon = length(subsystem.con)
-    msg = "Subsystem with $nvar variables and $ncon constraints"
-    println(io, msg)
-    println(io, repeat("-", length(msg)))
-    println(io, "Variables:")
-    for var in subsystem.var
-        println(io, "  $var")
-    end
-    println(io, "Constraints:")
-    for con in subsystem.con
-        println(io, "  $con")
-    end
+    rowstr = eltype(subsystem.con) <: JuMP.ConstraintRef ? "Constraints" : "Rows"
+    colstr = eltype(subsystem.var) <: JuMP.VariableRef ? "Variables" : "Columns"
+    nrow = length(subsystem.con)
+    ncol = length(subsystem.var)
+    println(io, "A Subsystem of $rowstr and $colstr")
+    println(io, "├ $rowstr: $nrow")
+    print(io, "└ $colstr: $ncol")
     return
 end
 
