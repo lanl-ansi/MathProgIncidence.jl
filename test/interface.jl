@@ -341,11 +341,11 @@ end
 function test_one_connected_component_igraph(model_function=make_degenerate_flow_model)
     m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
-    con_comps, var_comps = MathProgIncidence.connected_components(igraph)
-    @test length(var_comps) == 1
-    @test length(con_comps) == 1
-    @test length(var_comps[1]) == 8
-    @test length(con_comps[1]) == 8
+    cc = MathProgIncidence.connected_components(igraph)
+    @test length(cc.var) == 1
+    @test length(cc.con) == 1
+    @test length(cc.var[1]) == 8
+    @test length(cc.con[1]) == 8
     return
 end
 
@@ -360,18 +360,18 @@ function test_multiple_connected_components_igraph()
         predicted_comps = Set(
             [Set([x[1], x[3], eq1]), Set([x[2], x[4], eq2]), Set([x[5], eq3])]
         )
-        @test length(var_comps) == 3
-        @test length(con_comps) == 3
+        @test length(varcc) == 3
+        @test length(concc) == 3
         for i in 1:3
-            comp = Set(cat(var_comps[i], con_comps[i], dims = 1))
+            comp = Set(cat(varcc[i], concc[i], dims = 1))
             @test comp in predicted_comps
         end
     end
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
-    con_comps, var_comps = MathProgIncidence.connected_components(igraph)
-    _test_cc(con_comps, var_comps)
-    con_comps, var_comps = MathProgIncidence.connected_components(m)
-    _test_cc(con_comps, var_comps)
+    cc = MathProgIncidence.connected_components(igraph)
+    _test_cc(cc.con, cc.var)
+    cc = MathProgIncidence.connected_components(m)
+    _test_cc(cc.con, cc.var)
     return
 end
 
@@ -383,12 +383,12 @@ function test_one_connected_component_cons_vars(model_function=make_degenerate_f
     uc_con = con_dmp.underconstrained
     oc_var = var_dmp.overconstrained
     oc_con = [con_dmp.overconstrained..., con_dmp.unmatched...]
-    uc_con_comps, uc_var_comps = MathProgIncidence.connected_components(uc_con, uc_var)
-    oc_con_comps, oc_var_comps = MathProgIncidence.connected_components(oc_con, oc_var)
-    @test length(uc_con_comps) == 1
-    @test length(uc_var_comps) == 1
-    @test length(oc_con_comps) == 1
-    @test length(oc_var_comps) == 1
+    uc_cc = MathProgIncidence.connected_components(uc_con, uc_var)
+    oc_cc = MathProgIncidence.connected_components(oc_con, oc_var)
+    @test length(uc_cc.con) == 1
+    @test length(uc_cc.var) == 1
+    @test length(oc_cc.con) == 1
+    @test length(oc_cc.var) == 1
     x = m[:x]
     flow_comp = m[:flow_comp]
     flow = m[:flow]
@@ -397,10 +397,10 @@ function test_one_connected_component_cons_vars(model_function=make_degenerate_f
     comp_dens_eqn = m[:comp_dens_eqn]
     bulk_dens_eqn = m[:bulk_dens_eqn]
     comp_flow_eqn = m[:comp_flow_eqn]
-    @test Set(uc_con_comps[1]) == Set(comp_flow_eqn)
-    @test Set(oc_con_comps[1]) == Set([comp_dens_eqn..., bulk_dens_eqn, sum_comp_eqn])
-    @test Set(uc_var_comps[1]) == Set([flow_comp..., flow])
-    @test Set(oc_var_comps[1]) == Set([x..., rho])
+    @test Set(uc_cc.con[1]) == Set(comp_flow_eqn)
+    @test Set(oc_cc.con[1]) == Set([comp_dens_eqn..., bulk_dens_eqn, sum_comp_eqn])
+    @test Set(uc_cc.var[1]) == Set([flow_comp..., flow])
+    @test Set(oc_cc.var[1]) == Set([x..., rho])
     return
 end
 
@@ -417,10 +417,10 @@ function test_connected_components_matrix()
         @test rowcc == [[1, 2], [3]]
         @test colcc == [[1, 3], [2]]
     end
-    rowcc, colcc = MathProgIncidence.connected_components(matrix)
-    _test_cc(rowcc, colcc)
-    rowcc, colcc = MathProgIncidence.connected_components(sparse(matrix))
-    _test_cc(rowcc, colcc)
+    cc = MathProgIncidence.connected_components(matrix)
+    _test_cc(cc.con, cc.var)
+    cc = MathProgIncidence.connected_components(sparse(matrix))
+    _test_cc(cc.con, cc.var)
     return nothing
 end
 
@@ -495,7 +495,7 @@ function test_block_triangularize_matrix()
         0 1 0;
     ]
     function _test_blocks(block)
-        @test blocks[1] == ([3], [2])
+        @test blocks[1] == MathProgIncidence.Subsystem(([3], [2]))
         @test Set(blocks[2][1]) == Set([1, 2])
         @test Set(blocks[2][2]) == Set([1, 3])
     end

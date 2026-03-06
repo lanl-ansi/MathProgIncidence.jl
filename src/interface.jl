@@ -277,6 +277,8 @@ function maximum_matching(
     return maximum_matching(igraph)
 end
 
+# TODO: These types should be parameterized to handle integers as well
+# as variables/constraints.
 const DMConPartition = NamedTuple{
     (:underconstrained, :square, :overconstrained, :unmatched),
     Tuple{
@@ -295,6 +297,21 @@ const DMVarPartition = NamedTuple{
         Vector{JuMP.VariableRef},
         Vector{JuMP.VariableRef},
     },
+}
+
+"""
+    DulmageMendelsohnDecomposition <: NamedTuple
+
+The return type of [`dulmage_mendelsohn`](@ref). Fieldnames are `con`
+and `var`, which each contain the fieldnames documented by `dulmage_mendelsohn`.
+"""
+const DulmageMendelsohnDecomposition = NamedTuple{
+    (:con, :var),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # wells as variables/constraints.
+    # TODO: Parameterize this type? Or just always use ints, then keep the vars/cons
+    # somewhere else?
+    Tuple{NamedTuple,NamedTuple},
 }
 
 """
@@ -394,7 +411,7 @@ julia> # As there are no unmatched constraints, the overconstrained subsystem is
 """
 function dulmage_mendelsohn(
     igraph::IncidenceGraphInterface
-)
+)::DulmageMendelsohnDecomposition
     ncon = length(igraph._con_node_map)
     con_node_set = Set(1:ncon)
     con_dmp, var_dmp = dulmage_mendelsohn(igraph._graph, con_node_set)
@@ -413,13 +430,13 @@ function dulmage_mendelsohn(
         square = [nodes[n] for n in var_dmp[4]],
         overconstrained = [nodes[n] for n in var_dmp[3]],
     )
-    return con_dmp, var_dmp
+    return DulmageMendelsohnDecomposition((con_dmp, var_dmp))
 end
 
 function dulmage_mendelsohn(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Tuple{DMConPartition, DMVarPartition}
+)::DulmageMendelsohnDecomposition
     igraph = IncidenceGraphInterface(constraints, variables)
     return dulmage_mendelsohn(igraph)
 end
@@ -429,15 +446,34 @@ dulmage_mendelsohn(matrix::SparseMatrixCSC) = dulmage_mendelsohn(IncidenceGraphI
 dulmage_mendelsohn(matrix::Matrix) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 
 """
+    ConnectedComponentDecomposition <: NamedTuple
+
+The return type of [`connected_components`](@ref). Fields are `rows` and `columns`,
+which each contain a vector of vectors of either constraints/variables or integers.
+
+!!! warning
+    This return type differs from that of `block_triangularize`, which is
+    `Vector{Subsystem}`. This return type may change in the future for
+    consistency.
+"""
+const ConnectedComponentDecomposition = NamedTuple{
+    (:con, :var),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # well as variables/constraints.
+    Tuple{Vector{Vector},Vector{Vector}},
+}
+
+"""
     connected_components(igraph::IncidenceGraphInterface)
 
 Return the connected components of a bipartite incidence graph of constraints
 and variables.
 
-The connected components are returned as two vector-of-vectors, containing
-the variables in each connected component and the constraints in each
-connected component. Note that the input graph is undirected, so there is no
-distinction between strongly and weakly connected components.
+The connected components are returned as a NamedTuple with fields `con` and
+`var`, each a vector-of-vectors containing the constraints/rows and
+variables/columns in each connected component. Note that the input graph is
+undirected, so there is no distinction between strongly and weakly connected
+components.
 
 # Example
 ```julia-repl
@@ -455,14 +491,14 @@ julia> @constraint(m, eq2, x[2]^2 == 2);
 
 julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
-julia> con_comps, var_comps = MathProgIncidence.connected_components(igraph);
+julia> cc = MathProgIncidence.connected_components(igraph);
 
-julia> con_comps
+julia> cc.con
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] = 1]
  [eq2 : x[2]² = 2]
 
-julia> var_comps
+julia> cc.var
 2-element Vector{Vector{VariableRef}}:
  [x[1]]
  [x[2]]
@@ -471,7 +507,7 @@ julia> var_comps
 """
 function connected_components(
     igraph::IncidenceGraphInterface
-)
+)::ConnectedComponentDecomposition
     comps = Graphs.connected_components(igraph._graph)
     ncon = length(igraph._con_node_map)
     nodes = igraph._nodes
@@ -479,7 +515,7 @@ function connected_components(
     # TODO: Sort components?
     con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
     var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
-    return con_comps, var_comps
+    return (con = con_comps, var = var_comps)
 end
 
 
@@ -516,14 +552,14 @@ julia> uc_con = con_dmp.underconstrained;
 
 julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
 
-julia> con_comps, var_comps = MathProgIncidence.connected_components(uc_con, uc_var);
+julia> cc = MathProgIncidence.connected_components(uc_con, uc_var);
 
-julia> con_comps
+julia> cc.con
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] + x[3] = 7]
  [eq2 : x[2]² + x[4]² = 1]
 
-julia> var_comps
+julia> cc.var
 2-element Vector{Vector{VariableRef}}:
  [x[3], x[1]]
  [x[4], x[2]]
@@ -533,7 +569,7 @@ julia> var_comps
 function connected_components(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Tuple{Vector{Vector{JuMP.ConstraintRef}}, Vector{Vector{JuMP.VariableRef}}}
+)::ConnectedComponentDecomposition
     igraph = IncidenceGraphInterface(constraints, variables)
     return connected_components(igraph)
 end
@@ -541,6 +577,22 @@ end
 connected_components(model::JuMP.Model) = connected_components(IncidenceGraphInterface(model))
 connected_components(matrix::SparseMatrixCSC) = connected_components(IncidenceGraphInterface(matrix))
 connected_components(matrix::Matrix) = connected_components(IncidenceGraphInterface(matrix))
+
+"""
+    Subsystem <: NamedTuple
+
+A set of constraints and variables (or row and column indices).
+Fieldnames are `con` and `var`, each of which contains a vector
+of constraints/variables or integers.
+"""
+const Subsystem = NamedTuple{
+    (:con, :var),
+    # NOTE: These fields are not fully typed as we need to support ints as
+    # wells as variables/constraints.
+    # TODO: Parameterize this type? Or just always use ints, then keep the vars/cons
+    # somewhere else?
+    Tuple{Vector,Vector},
+}
 
 """
     block_triangularize(igraph::IncidenceGraphInterface)::Vector{Tuple{Vector, Vector}}
@@ -631,7 +683,7 @@ function block_triangularize(
     matching = maximum_matching(igraph._graph, connodeset)
     nmatch = length(matching)
     if nvar != ncon || nvar != nmatch
-        @error (
+        error(
             "block_triangularize only supports square systems with perfect matchings."
             * "Got nvar=$nvar, ncon=$ncon, n. matched = $nmatch"
         )
@@ -639,7 +691,7 @@ function block_triangularize(
     connode_blocks = _block_triangularize(igraph._graph, matching)
     # node_blocks is a vector of tuples of vectors: [([cons], [vars]),...]
     blocks = [
-        ([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b])
+        Subsystem(([igraph._nodes[n] for n in b], [igraph._nodes[matching[n]] for n in b]))
         for b in connode_blocks
     ]
     return blocks
@@ -655,7 +707,7 @@ This method accepts vectors of constraints and variables and is useful for
 performing the block-triangular decomposition on the well-constrained subsystem
 from the Dulmage-Mendelsohn decomposition.
 
-The return type is a vector of tuples of vectors of constraints and variables.
+The return type is a vector of [`Subsystem`](@ref)s.
 
 !!! warning
     This is a slightly different return type than the [`connected_components`](@ref) method.
@@ -705,7 +757,7 @@ x[3], (x[1] * (x[3] ^ 0.5)) - 3.0 = 0
 function block_triangularize(
     constraints::Vector{<:JuMP.ConstraintRef},
     variables::Vector{JuMP.VariableRef},
-)::Vector{Tuple{Vector{JuMP.ConstraintRef}, Vector{JuMP.VariableRef}}}
+)::Vector{Subsystem}
     igraph = IncidenceGraphInterface(constraints, variables)
     return block_triangularize(igraph)
 end
