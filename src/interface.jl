@@ -457,7 +457,7 @@ which each contain a vector of vectors of either constraints/variables or intege
     consistency.
 """
 const ConnectedComponentDecomposition = NamedTuple{
-    (:rows, :columns),
+    (:con, :var),
     # NOTE: These fields are not fully typed as we need to support ints as
     # well as variables/constraints.
     Tuple{Vector{Vector},Vector{Vector}},
@@ -469,8 +469,8 @@ const ConnectedComponentDecomposition = NamedTuple{
 Return the connected components of a bipartite incidence graph of constraints
 and variables.
 
-The connected components are returned as a NamedTuple with fields `rows` and
-`columns`, each a vector-of-vectors containing the constraints/rows and
+The connected components are returned as a NamedTuple with fields `con` and
+`var`, each a vector-of-vectors containing the constraints/rows and
 variables/columns in each connected component. Note that the input graph is
 undirected, so there is no distinction between strongly and weakly connected
 components.
@@ -493,12 +493,12 @@ julia> igraph = MathProgIncidence.IncidenceGraphInterface(m);
 
 julia> cc = MathProgIncidence.connected_components(igraph);
 
-julia> cc.rows
+julia> cc.con
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] = 1]
  [eq2 : x[2]² = 2]
 
-julia> cc.columns
+julia> cc.var
 2-element Vector{Vector{VariableRef}}:
  [x[1]]
  [x[2]]
@@ -515,7 +515,7 @@ function connected_components(
     # TODO: Sort components?
     con_comps = [[nodes[n] for n in comp if n in con_node_set] for comp in comps]
     var_comps = [[nodes[n] for n in comp if !(n in con_node_set)] for comp in comps]
-    return (rows = con_comps, columns = var_comps)
+    return (con = con_comps, var = var_comps)
 end
 
 
@@ -554,12 +554,12 @@ julia> uc_var = [var_dmp.unmatched..., var_dmp.underconstrained...];
 
 julia> cc = MathProgIncidence.connected_components(uc_con, uc_var);
 
-julia> cc.rows
+julia> cc.con
 2-element Vector{Vector{ConstraintRef}}:
  [eq1 : x[1] + x[3] = 7]
  [eq2 : x[2]² + x[4]² = 1]
 
-julia> cc.columns
+julia> cc.var
 2-element Vector{Vector{VariableRef}}:
  [x[3], x[1]]
  [x[4], x[2]]

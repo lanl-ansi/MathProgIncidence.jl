@@ -342,10 +342,10 @@ function test_one_connected_component_igraph(model_function=make_degenerate_flow
     m = model_function()
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     cc = MathProgIncidence.connected_components(igraph)
-    @test length(cc.columns) == 1
-    @test length(cc.rows) == 1
-    @test length(cc.columns[1]) == 8
-    @test length(cc.rows[1]) == 8
+    @test length(cc.var) == 1
+    @test length(cc.con) == 1
+    @test length(cc.var[1]) == 8
+    @test length(cc.con[1]) == 8
     return
 end
 
@@ -369,9 +369,9 @@ function test_multiple_connected_components_igraph()
     end
     igraph = MathProgIncidence.IncidenceGraphInterface(m)
     cc = MathProgIncidence.connected_components(igraph)
-    _test_cc(cc.rows, cc.columns)
+    _test_cc(cc.con, cc.var)
     cc = MathProgIncidence.connected_components(m)
-    _test_cc(cc.rows, cc.columns)
+    _test_cc(cc.con, cc.var)
     return
 end
 
@@ -385,10 +385,10 @@ function test_one_connected_component_cons_vars(model_function=make_degenerate_f
     oc_con = [con_dmp.overconstrained..., con_dmp.unmatched...]
     uc_cc = MathProgIncidence.connected_components(uc_con, uc_var)
     oc_cc = MathProgIncidence.connected_components(oc_con, oc_var)
-    @test length(uc_cc.rows) == 1
-    @test length(uc_cc.columns) == 1
-    @test length(oc_cc.rows) == 1
-    @test length(oc_cc.columns) == 1
+    @test length(uc_cc.con) == 1
+    @test length(uc_cc.var) == 1
+    @test length(oc_cc.con) == 1
+    @test length(oc_cc.var) == 1
     x = m[:x]
     flow_comp = m[:flow_comp]
     flow = m[:flow]
@@ -397,10 +397,10 @@ function test_one_connected_component_cons_vars(model_function=make_degenerate_f
     comp_dens_eqn = m[:comp_dens_eqn]
     bulk_dens_eqn = m[:bulk_dens_eqn]
     comp_flow_eqn = m[:comp_flow_eqn]
-    @test Set(uc_cc.rows[1]) == Set(comp_flow_eqn)
-    @test Set(oc_cc.rows[1]) == Set([comp_dens_eqn..., bulk_dens_eqn, sum_comp_eqn])
-    @test Set(uc_cc.columns[1]) == Set([flow_comp..., flow])
-    @test Set(oc_cc.columns[1]) == Set([x..., rho])
+    @test Set(uc_cc.con[1]) == Set(comp_flow_eqn)
+    @test Set(oc_cc.con[1]) == Set([comp_dens_eqn..., bulk_dens_eqn, sum_comp_eqn])
+    @test Set(uc_cc.var[1]) == Set([flow_comp..., flow])
+    @test Set(oc_cc.var[1]) == Set([x..., rho])
     return
 end
 
@@ -418,9 +418,9 @@ function test_connected_components_matrix()
         @test colcc == [[1, 3], [2]]
     end
     cc = MathProgIncidence.connected_components(matrix)
-    _test_cc(cc.rows, cc.columns)
+    _test_cc(cc.con, cc.var)
     cc = MathProgIncidence.connected_components(sparse(matrix))
-    _test_cc(cc.rows, cc.columns)
+    _test_cc(cc.con, cc.var)
     return nothing
 end
 
