@@ -299,6 +299,12 @@ const DMVarPartition = NamedTuple{
     },
 }
 
+"""
+    DulmageMendelsohnDecomposition <: NamedTuple
+
+The return type of [`dulmage_mendelsohn`](@ref). Fieldnames are `con`
+and `var`, which each contain the fieldnames documented by `dulmage_mendelsohn`.
+"""
 const DulmageMendelsohnDecomposition = NamedTuple{
     (:con, :var),
     # NOTE: These fields are not fully typed as we need to support ints as
@@ -439,6 +445,17 @@ dulmage_mendelsohn(model::JuMP.Model) = dulmage_mendelsohn(IncidenceGraphInterfa
 dulmage_mendelsohn(matrix::SparseMatrixCSC) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 dulmage_mendelsohn(matrix::Matrix) = dulmage_mendelsohn(IncidenceGraphInterface(matrix))
 
+"""
+    ConnectedComponentDecomposition <: NamedTuple
+
+The return type of [`connected_components`](@ref). Fields are `rows` and `columns`,
+which each contain a vector of vectors of either constraints/variables or integers.
+
+!!! warning
+    This return type differs from that of `block_triangularize`, which is
+    `Vector{Subsystem}`. This return type may change in the future for
+    consistency.
+"""
 const ConnectedComponentDecomposition = NamedTuple{
     (:rows, :columns),
     # NOTE: These fields are not fully typed as we need to support ints as
@@ -561,6 +578,13 @@ connected_components(model::JuMP.Model) = connected_components(IncidenceGraphInt
 connected_components(matrix::SparseMatrixCSC) = connected_components(IncidenceGraphInterface(matrix))
 connected_components(matrix::Matrix) = connected_components(IncidenceGraphInterface(matrix))
 
+"""
+    Subsystem <: NamedTuple
+
+A set of constraints and variables (or row and column indices).
+Fieldnames are `con` and `var`, each of which contains a vector
+of constraints/variables or integers.
+"""
 const Subsystem = NamedTuple{
     (:con, :var),
     # NOTE: These fields are not fully typed as we need to support ints as
@@ -683,7 +707,7 @@ This method accepts vectors of constraints and variables and is useful for
 performing the block-triangular decomposition on the well-constrained subsystem
 from the Dulmage-Mendelsohn decomposition.
 
-The return type is a vector of tuples of vectors of constraints and variables.
+The return type is a vector of [`Subsystem`](@ref)s.
 
 !!! warning
     This is a slightly different return type than the [`connected_components`](@ref) method.
